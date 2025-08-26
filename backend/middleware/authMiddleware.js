@@ -1,4 +1,4 @@
-const { response } = require("express");
+const response = require("../utils/responseHandler");
 const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
