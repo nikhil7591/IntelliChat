@@ -8,8 +8,8 @@ import { motion } from "framer-motion";
 import formatTimestamp from "../../utils/formatTime"
 
 const ChatList = ({ contacts }) => {
-    const setSelectedContact = useLayoutStore(state => state.setSelectedContact);
-    const selectedContact = useLayoutStore(state => state.selectedContact);
+    const setSelectedContact = useLayoutStore((state) => state.setSelectedContact);
+    const selectedContact = useLayoutStore((state) => state.selectedContact);
     const { theme } = useThemeStore();
     const { user } = useUserStore();
     const [searchTerms, setSearchTerms] = useState("");

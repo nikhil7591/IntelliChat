@@ -11,7 +11,6 @@ const HomePage = ()=>{
         try {
             const result = await getAllUsers();
             if(result.status === 'success'){
-                console.log(result.data)
                 setAllUsers(result.data)
             }
         } catch (error) {
@@ -22,8 +21,6 @@ const HomePage = ()=>{
     useEffect(()=>{
         getAllUser();
     },[])
-
-    console.log(allUsers)
 
     return (
         <Layout>

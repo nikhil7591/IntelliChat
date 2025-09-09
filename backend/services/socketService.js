@@ -110,7 +110,7 @@ const initializeSocket = (server) => {
         socket.to(receiverId).emit("user_typing", {
           userId,
           conversationId,
-          isTyping: fasle,
+          isTyping: false,
         });
       }, 3000);
 
@@ -144,25 +144,25 @@ const initializeSocket = (server) => {
     // Add or update reaction on message
     socket.on(
       "add_reaction",
-      async ({ messageId, emoji, userId, reactionUserId }) => {
+      async ({ messageId, emoji, userId:reactionUserId }) => {
         try {
           const message = await Message.findById(messageId);
           if (!message) return;
-          const existingIndex = message.reactions.findIndex(
+          const existingIndex = message.reaction.findIndex(
             (r) => r.user.toString() === reactionUserId
           );
           if (existingIndex > -1) {
-            const existing = message.reactions(existingIndex);
+            const existing = message.reaction[existingIndex];
             if (existing.emoji === emoji) {
               // remove same reaction
-              message.reactions.splice(existingIndex, 1);
+              message.reaction.splice(existingIndex, 1);
             } else {
               // change emoji
-              message.reactions[existingIndex].emoji === emoji;
+              message.reaction[existingIndex].emoji === emoji;
             }
           } else {
             // add new reaction
-            message.reactions.push({ user: reactionUserId, emoji });
+            message.reaction.push({ user: reactionUserId, emoji });
           }
           await message.save();
           const populatedMessage = await Message.findOne(message?._id)

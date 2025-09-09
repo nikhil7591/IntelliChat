@@ -51,6 +51,7 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                                 setSelectedContact={setSelectedContact}
                                 isMobile={isMobile}
                             />
+                            
 
                         </motion.div>
                     )}
