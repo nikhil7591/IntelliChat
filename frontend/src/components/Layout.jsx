@@ -51,7 +51,7 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                                 setSelectedContact={setSelectedContact}
                                 isMobile={isMobile}
                             />
-                            
+
 
                         </motion.div>
                     )}
@@ -63,28 +63,30 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                 <div
                     className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
                 >
-                    <div className={`${theme === 'dark' ? "bg-[#202c33] text-white" : "bg-white text-black"}p-6 rounded-lg shadow-lg max-w-sm w-full`}>
+                    <div className={`${theme === 'dark' ? "bg-[#202c33] text-white" : "bg-white text-black"} p-6 rounded-lg shadow-lg max-w-sm w-full`}>
                         <h2 className="text-2xl font-semibold mb-4">
                             Choose a theme
                         </h2>
                         <div className="space-y-4">
-                            <label htmlFor="" className="flex items-center space-x-3 cursor-pointer">
+                            <label htmlFor="light-theme" className="flex items-center space-x-3 cursor-pointer">
                                 <input
+                                    id="light-theme"
                                     type="radio"
                                     value='light'
                                     checked={theme === 'light'}
                                     onChange={() => setTheme("light")}
-                                    className="from-radio text-blue-600"
+                                    className="form-radio text-blue-600"
                                 />
                                 <span>Light</span>
                             </label>
-                            <label htmlFor="" className="flex items-center space-x-3 cursor-pointer">
+                            <label htmlFor="dark-theme" className="flex items-center space-x-3 cursor-pointer">
                                 <input
+                                    id="dark-theme"
                                     type="radio"
                                     value='dark'
                                     checked={theme === 'dark'}
                                     onChange={() => setTheme("dark")}
-                                    className="from-radio text-blue-600"
+                                    className="form-radio text-blue-600"
                                 />
                                 <span>Dark</span>
                             </label>
@@ -96,10 +98,10 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                         >
                             Close
                         </button>
-
                     </div>
+
                 </div>
-            )}
+            )}0
 
             {/* staus preview  */}
             {isStatusPreviewOpen && (
