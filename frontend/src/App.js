@@ -12,6 +12,7 @@ import Setting from "./pages/SettingSection/Setting";
 import useUserStore from "./store/useUserStore";
 import { disconnectSocket, initializeSocket } from "./services/chat.service";
 import { useChatStore } from "./store/chatStore";
+import Layout from "./components/Layout";
 
 function App() {
   const {user} = useUserStore();
@@ -41,6 +42,7 @@ function App() {
           </Route>
           <Route element={<ProtectedRoute/>}>
             <Route path="/" element={<HomePage />} />
+            {/* AI assistant route removed */}
             <Route path="/user-profile" element={<UserDetails />} />
             <Route path="/status" element={<Status />} />
             <Route path="/setting" element={<Setting />} />

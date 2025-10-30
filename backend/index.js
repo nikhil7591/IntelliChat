@@ -13,13 +13,14 @@ const http = require('http')
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8000;
 const app = express();
 
 
 const corsOptions = {
-    origin:process.env.FORNTEND_URL,  // should be FRONTEND_URL
-    credentials : true,
+    // Support both correctly spelled FRONTEND_URL and the misspelled FORNTEND_URL
+    origin: process.env.FRONTEND_URL || process.env.FORNTEND_URL || 'http://localhost:3000',
+    credentials: true,
 }
 app.use(cors(corsOptions));
 
@@ -65,10 +66,11 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth',authRoute)
 app.use('/api/chat',chatRoute)
 app.use('/api/status',statusRoute)
+// AI routes removed to restore previous simple project state
 
 server.listen(PORT,()=>{
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Frontend URL: http://localhost:8000`);
+    console.log(`📱 Frontend URL: ${corsOptions.origin}`);
     console.log(`🔧 Health check: http://localhost:${PORT}/api/health`);
     
     if (!process.env.MONGO_URI) {

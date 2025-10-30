@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import useThemeStore from "../store/themeStore";
 import useUserStore from "../store/useUserStore";
 import useLayoutStore from "../store/layoutStore";
-import { FaUser, FaWhatsapp ,FaUserCircle, FaCog} from "react-icons/fa";
+import { FaUser, FaWhatsapp ,FaUserCircle, FaCog, FaRobot} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { MdRadioButtonChecked } from "react-icons/md";
 
@@ -12,7 +12,7 @@ const Sidebar = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const { theme, setTheme } = useThemeStore();
     const { user } = useUserStore();
-    const { activeTab, setActiveTab, selectedContact } = useLayoutStore();
+    const { activeTab, setActiveTab, selectedContact, isAIMode, setIsAIMode } = useLayoutStore();
 
     useEffect(() => {
         const handleResize = () => {
@@ -53,6 +53,8 @@ const Sidebar = () => {
             >
                 <MdRadioButtonChecked size={40} className={`h-6 w-6${activeTab === "status" ? theme === "dark" ? "text-gray-800" : "" : theme === 'dark' ? "text-gray-300" : "text-gray-800"}`} />
             </Link>
+
+            
             {!isMobile && <div className="flex-grow" />}
             <Link
                 to='/setting'

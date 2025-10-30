@@ -5,9 +5,10 @@ import useLayoutStore from "../../store/layoutStore";
 import { useChatStore } from "../../store/chatStore";
 import { isToday, isYesterday, format } from 'date-fns';
 import whatsappImage from '../../images/whatsapp_image.png';
-import { FaArrowLeft, FaCog, FaEllipsisV, FaFile, FaImage, FaLock, FaPaperclip, FaPaperPlane, FaPhone, FaPhoneAlt, FaSearch, FaSearchPlus, FaSmile, FaTimes, FaVideo } from "react-icons/fa";
+import { FaArrowLeft, FaCog, FaEllipsisV, FaFile, FaImage, FaLock, FaPaperclip, FaPaperPlane, FaPhone, FaPhoneAlt, FaRobot, FaSearch, FaSearchPlus, FaSmile, FaTimes, FaVideo } from "react-icons/fa";
 import MessageBubble from "./MessageBubble";
 import EmojiPicker from 'emoji-picker-react';
+
 
 const isValidate = (date) => {
     return date instanceof Date && !isNaN(date)
@@ -21,6 +22,7 @@ const ChatWindow = ({ isMobile }) => {
     const [showFileMenu, setShowFileMenu] = useState(false);
     const [filePreview, setFilePreview] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
+    
     const typingTimeoutRef = useRef(null);
     const messageEndRef = useRef(null);
     const emojiPickerRef = useRef(null);
@@ -216,6 +218,7 @@ const ChatWindow = ({ isMobile }) => {
 
                 </div>
                 <div className="flex items-center space-x-4">
+                    {/* AI chat button removed */}
                     <button
                         className="focus:outline-none"
                     >
@@ -236,7 +239,6 @@ const ChatWindow = ({ isMobile }) => {
                     >
                         <FaEllipsisV className="h-5 w-5" />
                     </button>
-
                 </div>
 
             </div>

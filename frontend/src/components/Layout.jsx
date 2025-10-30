@@ -4,11 +4,14 @@ import { useLocation } from "react-router-dom";
 import useThemeStore from "../store/themeStore";
 import Sidebar from "./Sidebar";
 import { AnimatePresence, motion } from "framer-motion";
-import ChatWindow from "../pages/chatSection/ChatWindow"
+import ChatWindow from "../pages/chatSection/ChatWindow";
+
 
 const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPreviewOpen, statusPreviewContent }) => {
     const selectedContact = useLayoutStore(state => state.selectedContact);
     const setSelectedContact = useLayoutStore(state => state.setSelectedContact);
+    const isAIMode = useLayoutStore(state => state.isAIMode);
+    const setIsAIMode = useLayoutStore(state => state.setIsAIMode);
     const location = useLocation();
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const { theme, setTheme } = useThemeStore();
@@ -46,13 +49,13 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                             transition={{ type: "tween" }}
                             className={`w-full h-full`}
                         >
-                            <ChatWindow
-                                selectedContact={selectedContact}
-                                setSelectedContact={setSelectedContact}
-                                isMobile={isMobile}
-                            />
-
-
+                            
+                                <ChatWindow
+                                    selectedContact={selectedContact}
+                                    setSelectedContact={setSelectedContact}
+                                    isMobile={isMobile}
+                                />
+                            
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -101,7 +104,7 @@ const Layout = ({ children, isThemeDialogOpen, toggleThemeDialog, isStatusPrevie
                     </div>
 
                 </div>
-            )}0
+            )}
 
             {/* staus preview  */}
             {isStatusPreviewOpen && (

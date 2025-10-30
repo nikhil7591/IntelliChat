@@ -6,8 +6,10 @@ const useLayoutStore = create(
     (set) => ({
       activeTab: 'chats',
       selectedContact: null,
+      isAIMode: false,
       setSelectedContact: (contact) => set({ selectedContact: contact }),
       setActiveTab: (tab) => set({ activeTab: tab }),
+      setIsAIMode: (mode) => set({ isAIMode: mode }),
       resetSelectedContact: () => set({ selectedContact: null })
     }),
     {

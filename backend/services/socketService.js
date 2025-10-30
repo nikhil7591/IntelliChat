@@ -208,10 +208,14 @@ const initializeSocket = (server) => {
         }
 
         // Update user status in database
-        await User.findByIdAndUpdate(userId, {
-          isOnline: false,
-          lastSeen: new Date(),
-        });
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          {
+            isOnline: false,
+            lastSeen: new Date(),
+          },
+          { new: true } // This ensures we get the updated document
+        );
 
         io.emit("user_status", {
           userId,

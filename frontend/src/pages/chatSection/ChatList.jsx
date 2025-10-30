@@ -239,3 +239,4 @@ const ChatList = ({ contacts }) => {
 };
 
 export default ChatList;
+
