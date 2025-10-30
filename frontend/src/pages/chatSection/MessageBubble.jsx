@@ -59,6 +59,17 @@ const MessageBubble = ({ message, theme, onReact, currentUser, deleteMessage }) 
                             <p className="mt-1">{message.content}</p>
                         </div>
                     )}
+
+                    {message.contentType === 'video' && (
+                        <div>
+                            <video src={message.imageOrVideoUrl} alt="image-video"
+                            className="rounded-lg max-w-xs" 
+                            controls
+                            />
+
+                            <p className="mt-1">{message.content}</p>
+                        </div>
+                    )}
                 </div>
                 <div className="self-end flex items-center justify-end gap-1 text-xs opacity-60 mt-2 ml-2">
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>

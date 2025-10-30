@@ -93,21 +93,26 @@ export const useChatStore = create((set, get) => ({
         return { onlineUsers: newOnlineUsers };
       });
     });
+  },
 
-    // emit status check for all users in conversation list
-    const { conversations } = get();
+  // refresh user statuses for all conversations
+  refreshUserStatuses: () => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const { conversations, currentUser } = get();
     if (conversations?.data?.length > 0) {
       conversations.data?.forEach((conv) => {
         const otherUser = conv.participants.find(
-          (p) => p._id !== get().currentUser._id
+          (p) => p._id !== currentUser?._id
         );
-        if (otherUser._id) {
+        if (otherUser?._id) {
           socket.emit("get_user_status", otherUser._id, (status) => {
             set((state) => {
               const newOnlineUsers = new Map(state.onlineUsers);
-              newOnlineUsers.set(state.userId, {
-                isOnline: state.isOnline,
-                lastSeen: state.lastSeen,
+              newOnlineUsers.set(status.userId, {
+                isOnline: status.isOnline,
+                lastSeen: status.lastSeen,
               });
               return { onlineUsers: newOnlineUsers };
             });
@@ -124,7 +129,9 @@ export const useChatStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { data } = await axiosInstance.get("/chat/conversations");
-      set({ conversations: data, loading: false }).get().initSocketListeners();
+      set({ conversations: data, loading: false });
+      // Refresh user statuses after conversations are loaded
+      get().refreshUserStatuses();
       return data;
     } catch (error) {
       set({

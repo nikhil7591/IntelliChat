@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const User = require("../models/User");
 const Message = require("../models/Message");
+const { handleVideoCallEvent } = require("./video-call-events");
 
 // map to store online users -> userId, socketId
 const onlineUsers = new Map();
@@ -190,6 +191,10 @@ const initializeSocket = (server) => {
         }
       }
     );
+
+    // handle video Call events
+    handleVideoCallEvent(socket,io,onlineUsers)
+
     // handle disconnection and mark user offline
 
     const handelDisconnected = async () => {
