@@ -42,7 +42,7 @@ const ChatWindow = ({ isMobile }) => {
         if (selectedContact?._id && conversations?.data?.length > 0) {
             const conversation = conversations?.data?.find((conv) =>
                 conv.participants.some((participant) => participant._id === selectedContact?._id))
-            if (conversation._id) {
+            if (conversation?._id) {
                 fetchMessages(conversation._id)
             }
         }

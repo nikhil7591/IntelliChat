@@ -28,7 +28,11 @@ export const useChatStore = create((set, get) => ({
     socket.off("message_deleted");
 
     // listen for incoming message
-    socket.on("receive_message", (message) => {});
+    socket.on("receive_message", (message) => {
+      set((state) => ({
+        messages: [...state.messages, message]
+      }));
+    });
 
     // confirm message dilivery
     socket.on("message_send", (message) => {
@@ -179,19 +183,16 @@ export const useChatStore = create((set, get) => ({
     const content = formData.get("content");
     const messageStatus = formData.get("messageStatus");
     const socket = getSocket();
-    const { conversations } = get();
-    let conversationId = null;
-    if (conversations?.data?.length > 0) {
-      const conversation = conversations.data.find(
-        (conv) =>
-          conv.participants.some((p) => p._id === senderId) &&
-          conv.participants.some((p) => p._id === receiverId)
-      );
-      if (conversation) {
-        conversationId = conversation._id;
-        set({ currentConversation: conversationId });
-      }
-    }
+    const { conversations, fectchConversations } = get();
+    
+    // Find or create conversation
+    let conversation = conversations?.data?.find(
+      (conv) =>
+        conv.participants.some((p) => p._id === senderId) &&
+        conv.participants.some((p) => p._id === receiverId)
+    );
+    
+    let conversationId = conversation?._id || null;
     // temp message brfore actula respomse
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
@@ -221,7 +222,12 @@ export const useChatStore = create((set, get) => ({
       );
       const messageData = data.data || data;
 
-      // replace optimistic message eith real one
+      // Refresh conversations to get the new one if it was created
+      if (!conversationId) {
+        await fectchConversations();
+      }
+
+      // replace optimistic message with real one
       set((state) => ({
         messages: state.messages.map((msg) =>
           msg._id === tempId ? messageData : msg
@@ -243,7 +249,12 @@ export const useChatStore = create((set, get) => ({
   // receive Message
   receiveMessage: (message) => {
     if (!message) return;
-    const { currentConversation, currentUser, messages } = get();
+    const { currentConversation, currentUser, messages, fectchConversations } = get();
+    
+    // If this is a new conversation, refresh the conversations list
+    if (!currentConversation || currentConversation !== message.conversation) {
+      fectchConversations();
+    }
     const messageExits = message.some((msg) => msg._id === message._id);
     if (messageExits) return;
 

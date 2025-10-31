@@ -397,7 +397,7 @@ const VideoCallModal = ({ socket }) => {
             socket.off("webrtc_ice_candidate", handleWebRTCIceCandidate);
         }
 
-    }, [socket, peerConnection, currentCall, incomingCall, user,endCall])
+    }, [socket, peerConnection, currentCall, incomingCall, user?._id, endCall, processQueuedIceCandidates, iceCandidatesQueue])
 
     if (!isCallModalOpen && !incomingCall) {
         return null;
