@@ -16,7 +16,8 @@ exports.createStatus = async (req, res) => {
 
     let mediaUrl = null;
     let finalContentType = contentType || "text";
-    // handel file upload
+    
+    // handle file upload
     if (file) {
       const uploadFile = await uploadFileToCloundinary(file);
       if (!uploadFile?.secure_url) {
@@ -47,13 +48,13 @@ exports.createStatus = async (req, res) => {
     });
     await status.save();
 
-    const populatedStatus = await Status.findOne(status?._id)
+    const populatedStatus = await Status.findById(status._id)
       .populate("user", "username profilePicture")
       .populate("viewers", "username profilePicture");
 
     // Emit socket event
     if (req.io && req.socketUserMap) {
-      // Broadcast to all connecting user except the creator
+      // Broadcast to all connected users except the creator
       for (const [connectedUserId, socketId] of req.socketUserMap) {
         if (connectedUserId !== userId) {
           req.io.to(socketId).emit("new_status", populatedStatus);
@@ -61,14 +62,12 @@ exports.createStatus = async (req, res) => {
       }
     }
 
-    return response(res, 201, "Status create successfully", populatedStatus);
+    return response(res, 201, "Status created successfully", populatedStatus);
   } catch (error) {
-    console.log(error);
+    console.error("Error creating status:", error);
     return response(res, 500, "Internal server error");
   }
 };
-
-//
 
 exports.getStatus = async (req, res) => {
   try {
@@ -78,9 +77,10 @@ exports.getStatus = async (req, res) => {
       .populate("user", "username profilePicture")
       .populate("viewers", "username profilePicture")
       .sort({ createdAt: -1 });
-    return response(res, 200, "status retrived successfully", statuses);
+    
+    return response(res, 200, "Status retrieved successfully", statuses);
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching statuses:", error);
     return response(res, 500, "Internal server error");
   }
 };
@@ -88,65 +88,86 @@ exports.getStatus = async (req, res) => {
 exports.viewStatus = async (req, res) => {
   const { statusId } = req.params;
   const userId = req.user.userId;
+  
   try {
-    const status = await Status.findById(statusId);
+    const status = await Status.findById(statusId).populate("user", "_id");
+    
     if (!status) {
       return response(res, 404, "Status not found");
     }
+
+    // CRITICAL FIX: Don't add owner to viewers list
+    const statusOwnerId = status.user._id.toString();
+    if (statusOwnerId === userId) {
+      return response(res, 200, "Owner cannot be added to viewers list", {
+        statusId,
+        viewers: status.viewers,
+      });
+    }
+
+    // Check if user already viewed the status
     if (!status.viewers.includes(userId)) {
       status.viewers.push(userId);
       await status.save();
 
-      const updateStatus = await Status.findById(statusId)
+      // Fetch updated status with populated fields
+      const updatedStatus = await Status.findById(statusId)
         .populate("user", "username profilePicture")
         .populate("viewers", "username profilePicture");
 
-      // Emit socket event
+      // Emit socket event to status owner
       if (req.io && req.socketUserMap) {
-        // Broadcast to all connecting user except the creator
-        const statusOwnerSocketId = req.socketUserMap.get(
-          status.user._id.toString()
-        );
+        const statusOwnerSocketId = req.socketUserMap.get(statusOwnerId);
+        
         if (statusOwnerSocketId) {
           const viewData = {
             statusId,
             viewerId: userId,
-            totalViewers: updateStatus.viewers.length,
-            viewers: updateStatus.viewers,
+            totalViewers: updatedStatus.viewers.length,
+            viewers: updatedStatus.viewers,
           };
-          res.io.to(statusOwnerSocketId).emit("status_viewed", viewData);
+          req.io.to(statusOwnerSocketId).emit("status_viewed", viewData);
         } else {
-          console.log("Status Owner not connected");
+          console.log("Status owner not connected");
         }
       }
-    } else {
-      console.log("user already viewed the status");
-    }
 
-    return response(res, 200, "Status viewed successfully");
+      return response(res, 200, "Status viewed successfully", {
+        statusId,
+        viewers: status.viewers,
+      });
+    } else {
+      console.log("User already viewed the status");
+      return response(res, 200, "Status already viewed", {
+        statusId,
+        viewers: status.viewers,
+      });
+    }
   } catch (error) {
-    console.log(error);
-    return response(res, 500, "Internal server error");
+    console.error("Error viewing status:", error);
+    return response(res, 500, "Internal server error", null, error.message);
   }
 };
 
 exports.deleteStatus = async (req, res) => {
   const { statusId } = req.params;
   const userId = req.user.userId;
+  
   try {
     const status = await Status.findById(statusId);
+    
     if (!status) {
       return response(res, 404, "Status not found");
     }
+    
     if (status.user.toString() !== userId) {
-      return response(res, 403, "Not authorized to delete this Status");
+      return response(res, 403, "Not authorized to delete this status");
     }
 
     await status.deleteOne();
 
-    // Emit socket event
+    // Emit socket event to all connected users
     if (req.io && req.socketUserMap) {
-      // Broadcast to all connecting user except the creator
       for (const [connectedUserId, socketId] of req.socketUserMap) {
         if (connectedUserId !== userId) {
           req.io.to(socketId).emit("status_deleted", statusId);
@@ -154,9 +175,39 @@ exports.deleteStatus = async (req, res) => {
       }
     }
 
-    return response(res, 200, "Status delete successfully");
+    return response(res, 200, "Status deleted successfully");
   } catch (error) {
-    console.log(error);
+    console.error("Error deleting status:", error);
+    return response(res, 500, "Internal server error");
+  }
+};
+
+// Optional: Add this endpoint to get viewers of a specific status
+exports.getStatusViewers = async (req, res) => {
+  const { statusId } = req.params;
+  const userId = req.user.userId;
+  
+  try {
+    const status = await Status.findById(statusId)
+      .populate("user", "username profilePicture")
+      .populate("viewers", "username profilePicture");
+    
+    if (!status) {
+      return response(res, 404, "Status not found");
+    }
+
+    // Only allow status owner to see viewers
+    if (status.user._id.toString() !== userId) {
+      return response(res, 403, "Not authorized to view this information");
+    }
+
+    return response(res, 200, "Viewers retrieved successfully", {
+      statusId,
+      viewers: status.viewers,
+      totalViewers: status.viewers.length,
+    });
+  } catch (error) {
+    console.error("Error getting status viewers:", error);
     return response(res, 500, "Internal server error");
   }
 };

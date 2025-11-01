@@ -29,9 +29,27 @@ export const useChatStore = create((set, get) => ({
 
     // listen for incoming message
     socket.on("receive_message", (message) => {
-      set((state) => ({
-        messages: [...state.messages, message]
-      }));
+      set((state) => {
+        // Check if message already exists to prevent duplicates
+        const messageExists = state.messages.some(msg => msg._id === message._id || 
+          (msg.tempId && msg.tempId === message.tempId));
+        
+        if (messageExists) {
+          // If message exists, update it
+          return {
+            messages: state.messages.map(msg => 
+              (msg._id === message._id || (msg.tempId && msg.tempId === message.tempId)) 
+                ? { ...message, tempId: undefined } 
+                : msg
+            )
+          };
+        } else {
+          // If message doesn't exist, add it
+          return {
+            messages: [...state.messages, message]
+          };
+        }
+      });
     });
 
     // confirm message dilivery

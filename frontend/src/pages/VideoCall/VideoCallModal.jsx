@@ -241,33 +241,6 @@ const VideoCallModal = ({ socket }) => {
         endCall();
     }
 
-    // const cleanupCall = () => {
-    //     // Stop all tracks in local stream
-    //     if (localStream) {
-    //         localStream.getTracks().forEach(track => track.stop());
-    //         setLocalStream(null);
-    //     }
-        
-    //     // Stop all tracks in remote stream
-    //     if (remoteStream) {
-    //         remoteStream.getTracks().forEach(track => track.stop());
-    //         setRemoteStream(null);
-    //     }
-        
-    //     // Close and cleanup peer connection
-    //     if (peerConnection) {
-    //         peerConnection.close();
-    //         setPeerConnection(null);
-    //     }
-        
-    //     // Reset call state
-    //     setCallActive(false);
-    //     setCallStatus("");
-    //     setCurrentCall(null);
-    //     clearIncomingCall();
-    //     setCallModalOpen(false);
-    // };
-
     const handleEndCall = () => {
         const participantId = currentCall?.participantId || incomingCall?.callerId;
         const callId = currentCall?.callId || incomingCall?.callId;
@@ -374,17 +347,7 @@ const VideoCallModal = ({ socket }) => {
         socket.on("webrtc_answer", handleWebRTCAnswer);
         socket.on("webrtc_ice_candidate", handleWebRTCIceCandidate);
         
-        // socket.on("peer_disconnected", ({ userId }) => {
-        //     const participantId = currentCall?.participantId || incomingCall?.callerId;
-        //     if (userId === participantId) {
-        //         setCallStatus("peer_disconnected");
-        //         setTimeout(handleEndCall, 2000);
-        //     }
-        // });
-        // socket.on("force_disconnect", () => {
-        //     handleEndCall();
-        // });
-
+        
         console.log("Socket event listeners registered");
 
         // cleanup on unmount
