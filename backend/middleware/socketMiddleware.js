@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const socketMiddleware = (socket, next) => {
  
-  const token = socket.handshake.auth?.token || socket.handshake.headers["authorization"].split(' ')[1];
+  const token = socket.handshake.auth?.token || socket.handshake.headers["authorization"]?.split(' ')[1];
   if (!token ) {
     return next(new Error("Authorization token missing. Please provide token"));
   }
@@ -13,6 +13,7 @@ const socketMiddleware = (socket, next) => {
     socket.user = decode;
     console.log(socket.user);
     next();
+
   } catch (error) {
     console.error(error);
     return next(new Error ("Internal or expired token"));
