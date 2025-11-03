@@ -19,7 +19,7 @@ const app = express();
 
 const corsOptions = {
     // Support both correctly spelled FRONTEND_URL and the misspelled FORNTEND_URL
-    origin: process.env.FRONTEND_URL || process.env.FORNTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
 }
 app.use(cors(corsOptions));
