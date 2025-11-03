@@ -3,14 +3,21 @@ import useUserStore from "../store/useUserStore";
 
 let socket = null;
 const token =  localStorage.getItem("auth_token")
+
 export const initializeSocket = () => {
   if (socket) {
     return socket;
   }
   const user = useUserStore.getState().user;
+  if (!user?._id) {
+    console.log("User not authenticated, socket connection delayed");
+    return null;
+  }
+
   const BACKEND_URL = process.env.REACT_APP_API_URL;
+
   socket = io(BACKEND_URL, {
-    auth:{token},
+    auth:{token : localStorage.getItem("auth_token")},
     // withCredentials: true,
     transports: ["websocket", "polling"],
     reconnectionAttempts: 5,
