@@ -198,8 +198,6 @@ npm run build     # Build production-ready frontend
 
 Nikhil Kumar
 B.Tech CSE (AI) | Full Stack Developer | Chat & Web3 Enthusiast
-
-- 📧 Email: nikhil759100@gmail.com
 - 🔗 LinkedIn: https://www.linkedin.com/in/nikhil-kumar-2974292a9/
 - 💻 GitHub: https://github.com/nikhil7591
 
@@ -207,4 +205,5 @@ B.Tech CSE (AI) | Full Stack Developer | Chat & Web3 Enthusiast
 - This project is licensed under the MIT License.
 - You are free to use and modify it with proper attribution.
 
-
+**⭐ Show your support**
+- If you like this project, please star the repository on GitHub — it means a lot!
