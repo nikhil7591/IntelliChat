@@ -155,31 +155,32 @@ const initializeSocket = (server) => {
         try {
           const message = await Message.findById(messageId);
           if (!message) return;
-          const existingIndex = message.reaction.findIndex(
-            (r) => r.user.toString() === reactionUserId
+          
+          // Check if user has already reacted with this exact emoji (for toggle)
+          const existingReactionIndex = message.reaction.findIndex(
+            (r) => r.user.toString() === reactionUserId && r.emoji === emoji
           );
-          if (existingIndex > -1) {
-            const existing = message.reaction[existingIndex];
-            if (existing.emoji === emoji) {
-              // remove same reaction
-              message.reaction.splice(existingIndex, 1);
-            } else {
-              // change emoji
-              message.reaction[existingIndex].emoji === emoji;
-            }
+          
+          if (existingReactionIndex > -1) {
+            // User clicked same emoji again - toggle it off (remove)
+            message.reaction.splice(existingReactionIndex, 1);
           } else {
-            // add new reaction
+            // New emoji or different emoji - add it (allow multiple emojis per user)
             message.reaction.push({ user: reactionUserId, emoji });
           }
+          
           await message.save();
-          const populatedMessage = await Message.findOne(message?._id)
+          
+          // Populate the message with user details
+          const populatedMessage = await Message.findById(message?._id)
             .populate("sender", "username profilePicture")
             .populate("receiver", "username profilePicture")
-            .populate("reactions.user", "usernmae");
+            .populate("reaction.user", "username profilePicture");
 
+          // Send updated reactions to both sender and receiver
           const reactionUpdated = {
-            messageId,
-            reactions: populatedMessage.reactions,
+            messageId: populatedMessage._id,
+            reaction: populatedMessage.reaction,
           };
 
           const senderSocket = onlineUsers.get(
@@ -188,10 +189,16 @@ const initializeSocket = (server) => {
           const receiverSocket = onlineUsers.get(
             populatedMessage.receiver?._id.toString()
           );
-          if (senderSocket)
+          
+          // Emit to sender
+          if (senderSocket) {
             io.to(senderSocket).emit("reaction_update", reactionUpdated);
-          if (receiverSocket)
+          }
+          
+          // Emit to receiver
+          if (receiverSocket) {
             io.to(receiverSocket).emit("reaction_update", reactionUpdated);
+          }
         } catch (error) {
           console.error("Error handling reaction", error);
         }

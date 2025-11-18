@@ -3,7 +3,11 @@ import { getSocket } from "../services/chat.service";
 import axiosInstance from "../services/url.service";
 import { useId } from "react";
 
-export const useChatStore = create((set, get) => ({
+export const useChatStore = create((set, get) => {
+  // Track processed message IDs to prevent duplicates
+  const processedMessageIds = new Set();
+
+  return {
   conversations: [], // list of all conversation
   currentConversation: null,
   messages: [],
@@ -29,26 +33,31 @@ export const useChatStore = create((set, get) => ({
 
     // listen for incoming message
     socket.on("receive_message", (message) => {
+      // Skip if we've already processed this message ID
+      if (processedMessageIds.has(message._id)) {
+        return;
+      }
+      
+      // Mark this message as processed
+      processedMessageIds.add(message._id);
+      
       set((state) => {
-        // Check if message already exists to prevent duplicates
-        const messageExists = state.messages.some(msg => msg._id === message._id || 
-          (msg.tempId && msg.tempId === message.tempId));
+        // Check if message already exists in the current messages
+        const messageExists = state.messages.some(msg => msg._id === message._id);
         
         if (messageExists) {
-          // If message exists, update it
+          // Update existing message with latest data
           return {
-            messages: state.messages.map(msg => 
-              (msg._id === message._id || (msg.tempId && msg.tempId === message.tempId)) 
-                ? { ...message, tempId: undefined } 
-                : msg
+            messages: state.messages.map(msg =>
+              msg._id === message._id ? { ...message, tempId: undefined } : msg
             )
           };
-        } else {
-          // If message doesn't exist, add it
-          return {
-            messages: [...state.messages, message]
-          };
         }
+        
+        // Add new message (for receiver or new conversation)
+        return {
+          messages: [...state.messages, message]
+        };
       });
     });
 
@@ -70,10 +79,10 @@ export const useChatStore = create((set, get) => ({
     });
 
     // handle reaction on message
-    socket.on("reaction_upadte", ({ messageId, reactions }) => {
+    socket.on("reaction_update", ({ messageId, reaction }) => {
       set((state) => ({
         messages: state.messages.map((msg) =>
-          msg._id === messageId ? { ...msg, reactions } : msg
+          msg._id === messageId ? { ...msg, reaction } : msg
         ),
       }));
     });
@@ -167,6 +176,8 @@ export const useChatStore = create((set, get) => ({
   // fetch message
   fetchMessages: async (conversationId) => {
     if (!conversationId) return;
+    // Clear processed message IDs when loading new conversation
+    processedMessageIds.clear();
     set({ loading: true, error: null });
     try {
       const { data } = await axiosInstance.get(
@@ -215,6 +226,7 @@ export const useChatStore = create((set, get) => ({
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
       _id: tempId,
+      tempId: tempId,  // Store tempId for socket matching
       sender: { _id: senderId },
       receiver: { _id: receiverId },
       conversation: conversationId,
@@ -245,12 +257,17 @@ export const useChatStore = create((set, get) => ({
         await fectchConversations();
       }
 
-      // replace optimistic message with real one
-      set((state) => ({
-        messages: state.messages.map((msg) =>
-          msg._id === tempId ? messageData : msg
-        ),
-      }));
+      // Replace optimistic message with real one from API response IMMEDIATELY
+      set((state) => {
+        const updatedMessages = state.messages.map((msg) => {
+          // Match temp message by tempId
+          if (msg.tempId === tempId) {
+            return messageData;  // Replace with real message
+          }
+          return msg;
+        });
+        return { messages: updatedMessages };
+      });
       return messageData;
     } catch (error) {
       console.error("Error sending message", error);
@@ -267,18 +284,22 @@ export const useChatStore = create((set, get) => ({
   // receive Message
   receiveMessage: (message) => {
     if (!message) return;
-    const { currentConversation, currentUser, messages, fectchConversations } = get();
+    const { currentConversation, currentUser, fectchConversations } = get();
+    
+    // Check if message already exists in current messages
+    const { messages } = get();
+    const messageExists = messages.some(msg => msg._id === message._id);
+    if (messageExists) return;
     
     // If this is a new conversation, refresh the conversations list
     if (!currentConversation || currentConversation !== message.conversation) {
       fectchConversations();
     }
-    const messageExits = message.some((msg) => msg._id === message._id);
-    if (messageExits) return;
 
+    // Add message to current conversation
     if (message.conversation === currentConversation) {
       set((state) => ({
-        message: [...state.messages, message],
+        messages: [...state.messages, message],
       }));
 
       // automaticaly mark as read
@@ -289,7 +310,7 @@ export const useChatStore = create((set, get) => ({
 
     // update conversation preview and unread count
     set((state) => {
-      const updateConversation = state.conversations?.data?.map((conv) => {
+      const updatedConversations = state.conversations?.data?.map((conv) => {
         if (conv._id === message.conversation) {
           return {
             ...conv,
@@ -305,7 +326,7 @@ export const useChatStore = create((set, get) => ({
       return {
         conversations: {
           ...state.conversations,
-          data: updateConversation,
+          data: updatedConversations,
         },
       };
     });
@@ -363,11 +384,45 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // add/change reaction
+  // add/change reaction (with optimistic update)
   addReaction: async (messageId, emoji) => {
     const socket = getSocket();
     const { currentUser } = get();
     if (socket && currentUser) {
+      // Optimistic UI update - show reaction instantly
+      set((state) => ({
+        messages: state.messages.map((msg) => {
+          if (msg._id === messageId) {
+            const existingReactionIndex = msg.reaction?.findIndex(
+              (r) => r.user?._id === currentUser._id || r.user === currentUser._id
+            ) ?? -1;
+            
+            let updatedReactions = [...(msg.reaction || [])];
+            
+            if (existingReactionIndex > -1) {
+              const existingReaction = updatedReactions[existingReactionIndex];
+              // Check if same emoji (toggle off)
+              if (existingReaction.emoji === emoji) {
+                updatedReactions.splice(existingReactionIndex, 1);
+              } else {
+                // Replace with new emoji
+                updatedReactions[existingReactionIndex].emoji = emoji;
+              }
+            } else {
+              // Add new reaction
+              updatedReactions.push({
+                user: { _id: currentUser._id },
+                emoji,
+              });
+            }
+            
+            return { ...msg, reaction: updatedReactions };
+          }
+          return msg;
+        }),
+      }));
+      
+      // Send to server
       socket.emit("add_reaction", {
         messageId,
         emoji,
@@ -431,4 +486,5 @@ export const useChatStore = create((set, get) => ({
       typingUsers: new Map(),
     });
   },
-}));
+  };
+});

@@ -30,13 +30,18 @@ const ChatWindow = ({ isMobile }) => {
     const fileInputRef = useRef(null);
     const { theme } = useThemeStore();
     const { user } = useUserStore();
-    const { messages, loading, sendMessage, receiveMessage, fetchMessages, fectchConversations, conversations, startTyping, stopTyping, isUserTyping, isUserOnline, getUserLastSeen, cleanup, deleteMessage, addReaction, refreshUserStatuses } = useChatStore();
+    const { messages, loading, sendMessage, receiveMessage, fetchMessages, fectchConversations, conversations, startTyping, stopTyping, isUserTyping, isUserOnline, getUserLastSeen, cleanup, deleteMessage, addReaction, refreshUserStatuses, initSocketListeners } = useChatStore();
     const socket = getSocket();
 
     // get online status and lastseen
     const online = isUserOnline(selectedContact?._id);
     const lastseen = getUserLastSeen(selectedContact?._id);
     const isTyping = isUserTyping(selectedContact?._id);
+
+    // Initialize socket listeners when component mounts
+    useEffect(() => {
+        initSocketListeners();
+    }, [])
 
     useEffect(() => {
         if (selectedContact?._id && conversations?.data?.length > 0) {

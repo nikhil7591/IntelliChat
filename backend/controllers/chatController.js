@@ -74,10 +74,11 @@ exports.sendMessage = async (req, res) => {
 
     // Emit socket event for real time
     if (req.io && req.socketUserMap) {
-      // Broadcast to all connecting user except the creator
+      // Emit ONLY to receiver for instant display
+      // Sender already got the message from API response
       const receiverSocketId = req.socketUserMap.get(receiverId);
       if (receiverSocketId) {
-        req.io.to(receiverSocketId).emit("receiver_message", populatedMessage);
+        req.io.to(receiverSocketId).emit("receive_message", populatedMessage);
         message.messageStatus = "delivered";
         await message.save();
       }
@@ -211,13 +212,21 @@ exports.deletMessage = async (req, res) => {
     }
     await message.deleteOne();
 
-    // Emit socket event
+    // Emit socket event to BOTH sender and receiver
     if (req.io && req.socketUserMap) {
-      const recevierSocketId = req.socketUserMap.get(
+      const senderSocketId = req.socketUserMap.get(message.sender.toString());
+      const receiverSocketId = req.socketUserMap.get(
         message.receiver.toString()
       );
-      if (recevierSocketId) {
-        req.io.to(recevierSocketId).emit("message_deleted", messageId);
+      
+      // Emit to sender
+      if (senderSocketId) {
+        req.io.to(senderSocketId).emit("message_deleted", { deletedMessageId: messageId });
+      }
+      
+      // Emit to receiver
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit("message_deleted", { deletedMessageId: messageId });
       }
     }
     return response(res, 200, "Message deleted successfully");

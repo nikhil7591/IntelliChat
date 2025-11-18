@@ -17,7 +17,7 @@ const MessageBubble = ({ message, theme, onReact, currentUser, deleteMessage }) 
     const emojiPickerRef = useRef(null);
     const reactionsMenuRef = useRef(null);
     const isUserMessage = message.sender._id === currentUser?._id;
-    const bubbleClass = isUserMessage ? 'flex justify-end mb-2' : 'flex justify-start mb-2';
+    const bubbleClass = isUserMessage ? 'flex justify-end mb-7' : 'flex justify-start mb-7';
     const bubbleContentClass = isUserMessage
         ? `relative max-w-[60%] rounded-lg px-4 py-2 ${theme === 'dark' ? 'bg-[#005c4b] text-white' : 'bg-[#d9fdd3] text-black'}`
         : `relative max-w-[60%] rounded-lg px-4 py-2 ${theme === 'dark' ? 'bg-[#1f2937] text-white' : 'bg-white text-black'}`;
@@ -43,7 +43,7 @@ const MessageBubble = ({ message, theme, onReact, currentUser, deleteMessage }) 
     if (message === 0) return;
 
     return (
-        <div className={`chat ${bubbleClass}`}>
+        <div className={`chat ${bubbleClass} relative`}>
             <div
                 className={`relative group ${bubbleContentClass}`}
                 ref={messageRef}
@@ -141,12 +141,18 @@ const MessageBubble = ({ message, theme, onReact, currentUser, deleteMessage }) 
                 )}
                 {message.reaction && message.reaction.length > 0 && (
                     <div
-                        className={`absolute   ${isUserMessage ? "right-2" : "left-2"} ${theme === 'dark' ? "bg-[#2a3943]" : "bg-gray-200"} rounded-full px-3 shadow-md`}
+                        className={`absolute -bottom-7 mb-2 z-30 ${isUserMessage ? "right-2" : "left-2"} ${theme === 'dark' ? "bg-[#2a3943]" : "bg-gray-200"} rounded-full px-2 py-1 shadow-md flex items-center gap-1 pointer-events-auto`}
                     >
-                        {message.reaction.map((react, index) => (
-
-                            <span key={index} className="mr-1">
-                                {react.emoji}
+                        {Object.entries(
+                          message.reaction.reduce((acc, react) => {
+                            const emoji = react.emoji;
+                            acc[emoji] = (acc[emoji] || 0) + 1;
+                            return acc;
+                          }, {})
+                        ).map(([emoji, count]) => (
+                            <span key={emoji} className="flex items-center text-sm">
+                                <span>{emoji}</span>
+                                {count > 1 && <span className={`text-xs ml-0.5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{count}</span>}
                             </span>
                         ))}
                     </div>
