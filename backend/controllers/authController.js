@@ -38,27 +38,12 @@ const sentOtp = async (req, res) => {
     await user.save();
 
     // Send OTP via email
-    try {
-      await sendOTPToEmail(email, otp);
-      console.log(`✅ OTP successfully sent to ${email}`);
-    } catch (emailError) {
-      console.error("❌ Email sending failed:", {
-        error: emailError.message,
-        email: email,
-        timestamp: new Date().toISOString(),
-      });
-      // Don't throw - let's provide helpful error
-      return response(res, 500, `Email service error: ${emailError.message}`);
-    }
+    await sendOTPToEmail(email, otp);
 
     return response(res, 200, "OTP sent to your email address", { email });
   } catch (error) {
-    console.error("Send OTP error:", {
-      message: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString(),
-    });
-    return response(res, 500, `Server error: ${error.message}`);
+    console.error("Send OTP error:", error);
+    return response(res, 500, "Failed to send OTP. Please try again.");
   }
 };
 

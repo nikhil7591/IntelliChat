@@ -1,32 +1,35 @@
-// Email OTP Service using Brevo (Sendinblue) - Works perfectly on Render
-const SibApiV3Sdk = require("sib-api-v3-sdk");
+// Email OTP Service using Nodemailer
+const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
-// Initialize Brevo client
-const defaultClient = SibApiV3Sdk.ApiClient.instance;
-const apiKey = defaultClient.authentications["api-key"];
-apiKey.apiKey = process.env.BREVO_API_KEY;
+// Configure Gmail SMTP transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-// Verify that BREVO_API_KEY is configured
-if (!process.env.BREVO_API_KEY) {
-  console.error("❌ BREVO_API_KEY not found in environment variables");
-  console.log("⚠️  Please add BREVO_API_KEY to your .env and Render environment");
-  console.log("📍 Get a free API key from: https://www.brevo.com");
-} else {
-  console.log("✅ Brevo email service initialized and ready");
-}
+// Verify transporter connection
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Gmail SMTP connection failed:", error.message);
+    console.log("⚠️  Make sure EMAIL_USER and EMAIL_PASS are configured correctly in .env");
+  } else {
+    console.log("✅ Gmail SMTP configured and ready to send emails");
+  }
+});
 
 /**
- * Send OTP to user's email using Brevo
+ * Send OTP to user's email
  * @param {string} email - User's email address
  * @param {string} otp - 6-digit OTP code
  */
 const sendOTPToEmail = async (email, otp) => {
   try {
-    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
         
@@ -79,34 +82,41 @@ const sendOTPToEmail = async (email, otp) => {
       </div>
     `;
 
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.subject = "Your IntelliChat OTP Verification Code";
-    sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = {
-      name: "IntelliChat",
-      email: "noreply@intellichat.app",
-    };
-    sendSmtpEmail.to = [
-      {
-        email: email,
-      },
-    ];
-    sendSmtpEmail.replyTo = {
-      email: "support@intellichat.app",
-    };
+    const plainTextContent = `
+IntelliChat Verification
+========================
 
-    // Send email via Brevo
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
+Your OTP Code: ${otp}
 
-    console.log("✅ OTP email sent successfully via Brevo:", {
+This OTP is valid for 5 minutes. Please do not share this code with anyone.
+
+If you didn't request this OTP, please ignore this email.
+
+---
+IntelliChat Security Team
+This is an automated message. Please do not reply.
+    `;
+
+    const mailOptions = {
+      from: `IntelliChat <${process.env.EMAIL_USER}>`,
       to: email,
-      messageId: response.messageId,
+      subject: "Your IntelliChat OTP Verification Code",
+      html: htmlContent,
+      text: plainTextContent,
+      priority: "high",
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ OTP email sent successfully:", {
+      to: email,
+      messageId: info.messageId,
       timestamp: new Date().toISOString(),
     });
 
-    return response;
+    return info;
   } catch (error) {
-    console.error("❌ Error sending OTP email via Brevo:", {
+    console.error("❌ Error sending OTP email:", {
       email,
       error: error.message,
       timestamp: new Date().toISOString(),
