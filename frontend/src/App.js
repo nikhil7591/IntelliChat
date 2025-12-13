@@ -19,6 +19,19 @@ function App() {
   const {user} = useUserStore();
   const {setCurrentUser, initSocketListeners,cleanup} = useChatStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [hasShownLoader, setHasShownLoader] = useState(false);
+
+  useEffect(()=>{
+    // Only show loading screen once on initial app load
+    if (!hasShownLoader) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        setHasShownLoader(true);
+      }, 2000); // Show loading for 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasShownLoader]);
 
   useEffect(()=>{
     if(user?._id){
@@ -34,8 +47,8 @@ function App() {
     }
   },[user,setCurrentUser,initSocketListeners,cleanup])
 
-  if (isLoading) {
-    return <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />;
+  if (isLoading && !hasShownLoader) {
+    return <LoadingScreen onLoadingComplete={() => { setIsLoading(false); setHasShownLoader(true); }} />;
   }
 
   return (

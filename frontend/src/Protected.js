@@ -14,28 +14,31 @@ export const ProtectedRoute = ()=>{
         const verifyAuth = async()=>{
             try {
                 const result = await checkUserAuth();
-                if(result.isAuthenticated){
+                if(result?.isAuthenticated){
                     setUser(result.user);
-                }else{
+                } else {
                     clearUser();
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Auth check error:", error);
+                // Clear user if auth check fails (e.g., token expired or invalid)
                 clearUser();
-            }finally{
+            } finally {
                 setIsChecking(false);
             }
         }
         verifyAuth();
-    },[setUser,clearUser])
+    },[setUser, clearUser])
+
     if(isChecking){
         return <Loader/>;
     }
+
     if(!isAuthenticated){
         return <Navigate to="/user-login" state={{from:location}} replace />
     }
 
-    // user is authenticated -render the protected component
+    // user is authenticated - render the protected component
     return <Outlet/>
 }
 

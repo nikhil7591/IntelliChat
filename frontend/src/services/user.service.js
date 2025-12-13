@@ -39,12 +39,18 @@ export const checkUserAuth = async () => {
     const response = await axiosInstance.get("/auth/check-auth");
     if (response.data.status === "success") {
       return { isAuthenticated: true, user: response?.data?.data };
-    } else if (response.data.status === "error") {
-      return { isAuthenticated: true };
+    } else {
+      return { isAuthenticated: false };
     }
-    return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : error.message;
+    // 401 means token is invalid or expired - user is not authenticated
+    if (error.response?.status === 401) {
+      console.log("Token expired or invalid - redirecting to login");
+      localStorage.removeItem("auth_token");
+      return { isAuthenticated: false };
+    }
+    console.error("Auth check error:", error);
+    return { isAuthenticated: false };
   }
 };
 
