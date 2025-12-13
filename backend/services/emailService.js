@@ -4,13 +4,22 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-// Configure Gmail SMTP transporter
+// Configure Gmail SMTP transporter with Render compatibility
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,  // Use port 465 (SSL) instead of 587 for better Render compatibility
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 30000, // 30 second timeout for connection
+  socketTimeout: 30000,     // 30 second timeout for socket
+  logger: true,              // Enable logging for debugging
+  debug: true,               // Show debug output
+  tls: {
+    rejectUnauthorized: false, // Allow self-signed certificates (important for some networks)
+  }
 });
 
 // Verify transporter connection
@@ -18,6 +27,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error("❌ Gmail SMTP connection failed:", error.message);
     console.log("⚠️  Make sure EMAIL_USER and EMAIL_PASS are configured correctly in .env");
+    console.log("📍 Also check that Gmail App Password is being used (not regular password)");
   } else {
     console.log("✅ Gmail SMTP configured and ready to send emails");
   }
