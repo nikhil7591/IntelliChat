@@ -1,40 +1,23 @@
-// Email OTP Service using Nodemailer
-const nodemailer = require("nodemailer");
+// Email OTP Service using Resend (works perfectly on Render)
+const { Resend } = require("resend");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
-// Configure Gmail SMTP transporter with Render compatibility
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,  // Use port 465 (SSL) instead of 587 for better Render compatibility
-  secure: true, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 30000, // 30 second timeout for connection
-  socketTimeout: 30000,     // 30 second timeout for socket
-  logger: true,              // Enable logging for debugging
-  debug: true,               // Show debug output
-  tls: {
-    rejectUnauthorized: false, // Allow self-signed certificates (important for some networks)
-  }
-});
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Verify transporter connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Gmail SMTP connection failed:", error.message);
-    console.log("⚠️  Make sure EMAIL_USER and EMAIL_PASS are configured correctly in .env");
-    console.log("📍 Also check that Gmail App Password is being used (not regular password)");
-  } else {
-    console.log("✅ Gmail SMTP configured and ready to send emails");
-  }
-});
+// Verify that RESEND_API_KEY is configured
+if (!process.env.RESEND_API_KEY) {
+  console.error("❌ RESEND_API_KEY not found in environment variables");
+  console.log("⚠️  Please add RESEND_API_KEY to your .env and Render environment");
+  console.log("📍 Get a free API key from: https://resend.com");
+} else {
+  console.log("✅ Resend email service initialized and ready");
+}
 
 /**
- * Send OTP to user's email
+ * Send OTP to user's email using Resend
  * @param {string} email - User's email address
  * @param {string} otp - 6-digit OTP code
  */
@@ -107,26 +90,28 @@ IntelliChat Security Team
 This is an automated message. Please do not reply.
     `;
 
-    const mailOptions = {
-      from: `IntelliChat <${process.env.EMAIL_USER}>`,
+    // Send email using Resend
+    const response = await resend.emails.send({
+      from: "noreply@intellichat.app",
       to: email,
       subject: "Your IntelliChat OTP Verification Code",
       html: htmlContent,
       text: plainTextContent,
-      priority: "high",
-    };
+    });
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ OTP email sent successfully:", {
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+
+    console.log("✅ OTP email sent successfully via Resend:", {
       to: email,
-      messageId: info.messageId,
+      id: response.data?.id,
       timestamp: new Date().toISOString(),
     });
 
-    return info;
+    return response.data;
   } catch (error) {
-    console.error("❌ Error sending OTP email:", {
+    console.error("❌ Error sending OTP email via Resend:", {
       email,
       error: error.message,
       timestamp: new Date().toISOString(),
