@@ -92,7 +92,7 @@ This is an automated message. Please do not reply.
 
     // Send email using Resend
     const response = await resend.emails.send({
-      from: "noreply@intellichat.app",
+      from: "IntelliChat <onboarding@resend.dev>",
       to: email,
       subject: "Your IntelliChat OTP Verification Code",
       html: htmlContent,
