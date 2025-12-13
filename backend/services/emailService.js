@@ -1,28 +1,32 @@
-// Email OTP Service using Resend (works perfectly on Render)
-const { Resend } = require("resend");
+// Email OTP Service using Brevo (Sendinblue) - Works perfectly on Render
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Brevo client
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
-// Verify that RESEND_API_KEY is configured
-if (!process.env.RESEND_API_KEY) {
-  console.error("❌ RESEND_API_KEY not found in environment variables");
-  console.log("⚠️  Please add RESEND_API_KEY to your .env and Render environment");
-  console.log("📍 Get a free API key from: https://resend.com");
+// Verify that BREVO_API_KEY is configured
+if (!process.env.BREVO_API_KEY) {
+  console.error("❌ BREVO_API_KEY not found in environment variables");
+  console.log("⚠️  Please add BREVO_API_KEY to your .env and Render environment");
+  console.log("📍 Get a free API key from: https://www.brevo.com");
 } else {
-  console.log("✅ Resend email service initialized and ready");
+  console.log("✅ Brevo email service initialized and ready");
 }
 
 /**
- * Send OTP to user's email using Resend
+ * Send OTP to user's email using Brevo
  * @param {string} email - User's email address
  * @param {string} otp - 6-digit OTP code
  */
 const sendOTPToEmail = async (email, otp) => {
   try {
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
         
@@ -75,43 +79,34 @@ const sendOTPToEmail = async (email, otp) => {
       </div>
     `;
 
-    const plainTextContent = `
-IntelliChat Verification
-========================
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.subject = "Your IntelliChat OTP Verification Code";
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = {
+      name: "IntelliChat",
+      email: "noreply@intellichat.app",
+    };
+    sendSmtpEmail.to = [
+      {
+        email: email,
+      },
+    ];
+    sendSmtpEmail.replyTo = {
+      email: "support@intellichat.app",
+    };
 
-Your OTP Code: ${otp}
+    // Send email via Brevo
+    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
 
-This OTP is valid for 5 minutes. Please do not share this code with anyone.
-
-If you didn't request this OTP, please ignore this email.
-
----
-IntelliChat Security Team
-This is an automated message. Please do not reply.
-    `;
-
-    // Send email using Resend
-    const response = await resend.emails.send({
-      from: "IntelliChat <onboarding@resend.dev>",
+    console.log("✅ OTP email sent successfully via Brevo:", {
       to: email,
-      subject: "Your IntelliChat OTP Verification Code",
-      html: htmlContent,
-      text: plainTextContent,
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-
-    console.log("✅ OTP email sent successfully via Resend:", {
-      to: email,
-      id: response.data?.id,
+      messageId: response.messageId,
       timestamp: new Date().toISOString(),
     });
 
-    return response.data;
+    return response;
   } catch (error) {
-    console.error("❌ Error sending OTP email via Resend:", {
+    console.error("❌ Error sending OTP email via Brevo:", {
       email,
       error: error.message,
       timestamp: new Date().toISOString(),
