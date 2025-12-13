@@ -57,7 +57,7 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         env: {
             hasMongoUri: !!process.env.MONGO_URI,
-            hasTwilioConfig: !!(process.env.TWILLO_ACCOUNT_SID && process.env.TWILLO_AUTH_TOKEN && process.env.TWILLO_SERVICE_SID)
+            hasEmailConfig: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS)
         }
     });
 });
@@ -76,7 +76,7 @@ server.listen(PORT,()=>{
     if (!process.env.MONGO_URI) {
         console.log('⚠️  MONGO_URI not configured - database features will not work');
     }
-    if (!process.env.TWILLO_ACCOUNT_SID || !process.env.TWILLO_AUTH_TOKEN || !process.env.TWILLO_SERVICE_SID) {
-        console.log('⚠️  Twilio credentials not configured - SMS OTP will not work');
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.log('⚠️  Email credentials (EMAIL_USER, EMAIL_PASS) not configured - OTP email service will not work');
     }
 })

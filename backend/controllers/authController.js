@@ -3,110 +3,118 @@ const User = require("../models/User");
 const Conversation = require("../models/Conversation");
 const response = require("../utils/responseHandler");
 const sendOTPToEmail = require("../services/emailService");
-const twilloService = require("../services/twilloService");
 const generateToken = require("../utils/generateToken");
 const { uploadFileToCloundinary } = require("../config/CloudinaryConfig");
 
-// step -1 send otp
+// Step 1: Send OTP to email (Email-only authentication)
 const sentOtp = async (req, res) => {
-  const { phoneNumber, phoneSuffix, email } = req.body;
-  const otp = otpGenerate();
-  const expiry = new Date(Date.now() + 5 * 60 * 1000);
-  let user;
+  const { email } = req.body;
+  
   try {
-    if (email) {
-      user = await User.findOne({ email });
-      if (!user) {
-        user = new User({ email });
-      }
-      user.emailOtp = otp;
-      user.emailOtpExpiry = expiry;
-      await user.save();
-      await sendOTPToEmail(email, otp);
-      return response(res, 200, "OTP send to your email address", { email });
+    // Validate email is provided
+    if (!email) {
+      return response(res, 400, "Email address is required");
     }
 
-    if (!phoneNumber || !phoneSuffix) {
-      return response(res, 400, "Phone Number and Phone Suffix are required");
+    // Validate email format
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return response(res, 400, "Please provide a valid email address");
     }
 
-    const fullPhoneNumber = `${phoneSuffix}${phoneNumber}`;
-    user = await User.findOne({ phoneNumber });
+    // Generate 6-digit OTP
+    const otp = otpGenerate();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
+
+    // Find or create user
+    let user = await User.findOne({ email });
     if (!user) {
-      user = await User({ phoneNumber, phoneSuffix });
+      user = new User({ email });
     }
-    await twilloService.sendOTPToPhoneNumber(fullPhoneNumber);
+
+    // Store OTP and expiry in database
+    user.emailOtp = otp;
+    user.emailOtpExpiry = expiry;
     await user.save();
-    return response(res, 200, "OTP sent successfully", {
-      phoneNumber: fullPhoneNumber,
-    });
+
+    // Send OTP via email
+    await sendOTPToEmail(email, otp);
+
+    return response(res, 200, "OTP sent to your email address", { email });
   } catch (error) {
     console.error("Send OTP error:", error);
-    return response(res, 500, "Internal server Error");
+    return response(res, 500, "Failed to send OTP. Please try again.");
   }
 };
 
-// Step -2 verify otp
+// Step 2: Verify OTP sent to email
 const verifyOtp = async (req, res) => {
-  const { phoneNumber, phoneSuffix, email, otp } = req.body;
+  const { email, otp } = req.body;
+  
   try {
-    let user;
+    // Validate required fields
+    if (!email || !otp) {
+      return response(res, 400, "Email and OTP are required");
+    }
 
-    // Email verification
-    if (email) {
-      user = await User.findOne({ email });
-      if (!user) {
-        return response(res, 404, "User not found");
-      }
-      const now = new Date();
-      if (
-        !user.emailOtp ||
-        String(user.emailOtp) !== String(otp) ||
-        now > new Date(user.emailOtpExpiry)
-      ) {
-        return response(res, 400, "Invalid or expired OTP");
-      }
-      user.isVerified = true;
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return response(res, 404, "User not found");
+    }
+
+    // Validate OTP
+    const now = new Date();
+    
+    // Check if OTP exists
+    if (!user.emailOtp) {
+      return response(res, 400, "No OTP found. Please request a new OTP.");
+    }
+
+    // Check if OTP matches (convert both to strings for comparison)
+    if (String(user.emailOtp) !== String(otp)) {
+      return response(res, 400, "Invalid OTP");
+    }
+
+    // Check if OTP has expired
+    if (now > new Date(user.emailOtpExpiry)) {
       user.emailOtp = null;
       user.emailOtpExpiry = null;
       await user.save();
-    }
-    // Phone verification
-    else {
-      if (!phoneNumber || !phoneSuffix) {
-        return response(res, 400, "Phone Number and Phone Suffix are required");
-      }
-
-      const fullPhoneNumber = `${phoneSuffix}${phoneNumber}`;
-
-      // After Twilio verification, find or create user
-      user = await User.findOne({ phoneNumber });
-      if (!user) {
-        return response(res, 404, "User not found");
-      }
-      const result = await twilloService.verifyOtp(fullPhoneNumber, otp);
-      if (result.status !== "approved") {
-        return response(res, 400, "Invalid OTP");
-      }
-      user.isVerified = true;
-      await user.save();
+      return response(res, 400, "OTP has expired. Please request a new OTP.");
     }
 
-    // Generate and set authentication token
-    const token = generateToken(user?._id);
+    // Mark user as verified and clear OTP
+    user.isVerified = true;
+    user.emailOtp = null;
+    user.emailOtpExpiry = null;
+    await user.save();
+
+    // Generate JWT token
+    const token = generateToken(user._id);
+    
+    // Set authentication token in cookie
     res.cookie("auth_token", token, {
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 365,
+      maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
     });
 
-    return response(res, 200, "OTP verified successfully", { user, token });
+    return response(res, 200, "OTP verified successfully", { 
+      user: {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        profilePicture: user.profilePicture,
+      },
+      token 
+    });
   } catch (error) {
-    console.error("Verify OTP error: General exception", error);
-    return response(res, 500, "Internal server Error");
+    console.error("Verify OTP error:", error);
+    return response(res, 500, "Internal server error");
   }
 };
 
-// update user profile
+// Update user profile
 const updateProfile = async (req, res) => {
   const { username, agreed, about } = req.body;
   const userId = req.user.userId;
@@ -140,7 +148,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// chech Authenticated
+// Check Authenticated
 const checkAuthenticated = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -151,28 +159,31 @@ const checkAuthenticated = async (req, res) => {
     if (!user) {
       return response(res, 404, "User not found");
     }
-    return response(res, 200, "User retrieved and Allowed to use WhatsApp", user);
+    return response(res, 200, "User retrieved and Allowed to use IntelliChat", user);
   } catch (error) {
     console.error(error);
     return response(res, 500, "Internal server Error");
   }
 };
 
-// logout
+// Logout
 const logout = (req, res) => {
   try {
     res.cookie("auth_token", "", { expires: new Date(0) });
-    return response(res, 200, "User Logout Successfully! ");
-  } catch (error) {}
+    return response(res, 200, "User Logout Successfully!");
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Internal server Error");
+  }
 };
 
-// get all users
+// Get all users
 const getAllUsers = async (req, res) => {
   const loggedInUser = req.user.userId;
   try {
     const users = await User.find({ _id: { $ne: loggedInUser } })
       .select(
-        "username profilePicture lastSeen isOnline about phoneNumber phoneSuffix"
+        "username profilePicture lastSeen isOnline about"
       )
       .lean();
     const userWithConversation = await Promise.all(
@@ -206,5 +217,4 @@ module.exports = {
   logout,
   checkAuthenticated,
   getAllUsers,
-  
 };

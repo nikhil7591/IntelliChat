@@ -1,209 +1,370 @@
-# 💬 IntelliChat
+# IntelliChat 💬
+
+**Modern Email-Based OTP Authentication Chat Application**
+
+> Real-time chat application with WebRTC video calling, status updates, and file sharing. Built with MERN Stack + Email-based OTP authentication using Nodemailer.
 
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node-dot-js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)
-![WebRTC](https://img.shields.io/badge/WebRTC-333?style=for-the-badge&logo=webrtc&logoColor=white)
 
 ---
 
-## 🧠 About the Project
+## 📌 Important: Read Documentation First!
 
-**IntelliChat** is a modern **real-time chat web application** built using the **MERN Stack**.  
-It provides **secure user authentication**, **live messaging**, **file sharing**, **user status tracking**, and **video calling** — all in one elegant interface.
+**👉 For complete setup and deployment guide, see:** [`COMPLETE_DOCUMENTATION.md`](./COMPLETE_DOCUMENTATION.md)
 
-This project showcases **real-time communication** using **Socket.IO** and **WebRTC**, combined with a responsive **React + Tailwind CSS** frontend and a scalable **Node.js + MongoDB** backend.
-
----
-
-## 🚀 Features
-
-- 🔐 **JWT-based User Authentication**
-- 💬 **Real-time Chat** with Socket.IO
-- 👥 **Private and Group Chats**
-- 🟢 **User Online/Offline Status**
-- 📎 **File and Media Sharing**
-- 🎨 **Beautiful Responsive UI (Tailwind CSS)**
-- 👤 **User Profile Management**
-- 🎥 **One-to-One Video Calling** using WebRTC
-- ⚙️ **Optimized RESTful APIs with Express**
-- 🧱 **Modular & Maintainable Code Architecture**
+This includes:
+- ✅ Full setup instructions
+- ✅ Environment variables guide
+- ✅ API reference
+- ✅ Testing procedures
+- ✅ Deployment guide (Render + Vercel)
+- ✅ Troubleshooting guide
 
 ---
 
-## 🧩 Project Structure
-IntelliChat/
-│
-├── backend/ # Node.js + Express backend
-│ ├── config/ # Environment and database setup
-│ ├── controllers/ # Logic for chats, users, messages
-│ ├── middleware/ # JWT auth, error handling
-│ ├── models/ # MongoDB schemas
-│ ├── routes/ # API endpoints
-│ ├── services/ # File uploads, socket handlers
-│ ├── utils/ # Helper functions
-│ └── index.js # Main backend entry file
-│
-├── frontend/ # React + Tailwind frontend
-│ ├── src/ # Components, pages, socket logic
-│ ├── public/ # Static assets
-│ └── tailwind.config.js
-│
-└── .gitignore
+## 🚀 Quick Start (2 minutes)
 
+### Prerequisites
+- Node.js v14+
+- MongoDB
+- Gmail account
 
----
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-- ⚛️ React.js  
-- 🎨 Tailwind CSS  
-- 🌐 Socket.IO Client  
-- 🎥 WebRTC API  
-
-**Backend:**
-- 🟩 Node.js + Express.js  
-- 💾 MongoDB with Mongoose  
-- 🔐 JWT Authentication  
-- ⚡ Socket.IO for Real-time Events  
-- ☁️ Multer / Cloudinary for Media Uploads  
-
----
-
-## ⚙️ Installation & Setup Guide
-
-### 1️⃣ Clone the Repository
-
+### Step 1: Backend Setup
 ```bash
-git clone https://github.com/your-username/IntelliChat.git
-cd IntelliChat
-
-```
-## Backend Setup
-```
 cd backend
 npm install
+# Create .env file with:
+# MONGO_URI=your-mongodb-uri
+# EMAIL_USER=your-gmail@gmail.com
+# EMAIL_PASS=your-app-password
+# PORT=8000
+# FRONTEND_URL=http://localhost:3000
+# JWT_SECRET=your-32-char-secret
+npm run dev
 ```
 
-**Create a .env file inside the backend folder:**
-```
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-CLOUDINARY_API_KEY=your_cloudinary_key
-CLOUDINARY_API_SECRET=your_cloudinary_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-```
-
-**Start the backend server:**
-```
+### Step 2: Frontend Setup
+```bash
+cd frontend
+npm install
 npm start
 ```
-or
-```
-npm run dev
-```
-The backend will run on 👉 http://localhost:5000
 
-## Frontend Setup
+### Step 3: Test Authentication
+1. Open http://localhost:3000
+2. Enter your email
+3. Check your email for OTP code
+4. Enter OTP and create profile
+5. Welcome to IntelliChat! ✅
+
+---
+
+## ✨ Key Features
+
+### Authentication
+- 🔐 Email-based OTP (6-digit code)
+- ⏱️ 5-minute OTP expiry
+- 👤 User profile creation
+- 🔑 JWT token-based sessions
+
+### Chat Features
+- 💬 Real-time messaging (Socket.IO)
+- 👥 One-to-one & group chats
+- 📎 File & media sharing
+- 🟢 Online/offline status
+
+### Advanced Features
+- 🎥 WebRTC peer-to-peer video calling
+- 📱 User status updates
+- 🎨 Dark/light theme
+- 📱 Responsive mobile design
+
+---
+
+## 🔧 Technology Stack
+
+### Backend
+- **Node.js + Express** - Web server
+- **MongoDB + Mongoose** - Database
+- **Nodemailer** - Email OTP delivery
+- **Socket.IO** - Real-time communication
+- **JWT** - Authentication
+- **Cloudinary** - Image hosting
+
+### Frontend
+- **React** - UI library
+- **React Hook Form** - Forms
+- **Framer Motion** - Animations
+- **Tailwind CSS** - Styling
+- **Axios** - API calls
+- **Socket.IO Client** - Real-time updates
+- **Zustand** - State management
+
+---
+
+## 📁 Project Structure
+
 ```
-cd ../frontend
-npm install
+IntelliChat/
+├── backend/
+│   ├── controllers/    # API logic (auth, chat, status)
+│   ├── models/         # MongoDB schemas (User, Message, etc)
+│   ├── routes/         # API endpoints
+│   ├── services/       # Email, Socket.IO handlers
+│   ├── middleware/     # Auth, validation
+│   └── index.js        # Server entry point
+│
+├── frontend/
+│   ├── src/
+│   │   ├── pages/      # Login, Chat, Status components
+│   │   ├── components/ # UI components
+│   │   ├── store/      # Zustand state
+│   │   ├── services/   # API client
+│   │   └── App.js      # Main app
+│   └── public/         # Static files
+│
+├── COMPLETE_DOCUMENTATION.md   # ⭐ FULL GUIDE
+└── README.md                   # This file
 ```
 
-*Create a .env file inside the frontend folder:**
-```
-VITE_BACKEND_URL=http://localhost:5000
+---
+
+## 🔑 Environment Setup
+
+### Backend .env
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/intellichat
+EMAIL_USER=your-gmail@gmail.com
+EMAIL_PASS=your-app-specific-password
+PORT=8000
+FRONTEND_URL=http://localhost:3000
+JWT_SECRET=your-random-32-character-secret-key
+CLOUDINARY_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-**Run the frontend app:**
+### Frontend .env
+```env
+REACT_APP_API_URL=http://localhost:8000/api
+REACT_APP_ENV=development
 ```
-npm run dev
+
+**See COMPLETE_DOCUMENTATION.md for Gmail app password setup**
+
+---
+
+## 📚 API Endpoints
+
+### Authentication
 ```
-The frontend will run on 👉 http://localhost:3000
-
-### 🔄 Real-Time Communication (Socket.IO)
-
-The chat system uses Socket.IO for instant messaging.
-Flow:
-- A user connects to the Socket.IO server after authentication.
-- When a user sends a message, the backend emits a receiveMessage event.
-- All connected users in that chat receive the message instantly.
-- User typing and online status are updated dynamically.
-
-Event Flow Example:
+POST /api/auth/send-otp          # Send OTP to email
+POST /api/auth/verify-otp        # Verify OTP code
+POST /api/auth/update-profile    # Create/update user profile
 ```
-Client → emit('sendMessage', message)
-Server → listens for 'sendMessage' → emit('receiveMessage')
-Client → listens for 'receiveMessage' → updates chat instantly
+
+### Chat
 ```
-### 📹 Video Calling (WebRTC)
-The one-to-one video call feature is powered by WebRTC, using Socket.IO for signaling.
-**WebRTC Flow:**
+GET  /api/chat/conversations     # Get all conversations
+POST /api/chat/send-message      # Send message
+GET  /api/chat/:conversationId   # Get messages in conversation
 ```
-Caller → Create Offer (SDP)
-↓
-Send via Socket.IO
-↓
-Callee → Create Answer (SDP)
-↓
-Exchange ICE Candidates
-↓
-Live Video Stream Established
+
+### Status
 ```
-This enables peer-to-peer media streaming directly between browsers.
-
-### 🗂️ Folder Overview (Backend)
-| Folder         | Description                                      |
-| -------------- | ------------------------------------------------ |
-| `config/`      | MongoDB connection and environment configuration |
-| `controllers/` | Logic for user, chat, and message handling       |
-| `middleware/`  | JWT authentication and error management          |
-| `models/`      | Mongoose models for data storage                 |
-| `routes/`      | RESTful API routes                               |
-| `services/`    | File upload and socket signaling                 |
-| `utils/`       | Helper functions                                 |
-
-### 🎨 Folder Overview (Frontend)
-| Folder        | Description                                            |
-| ------------- | ------------------------------------------------------ |
-| `components/` | UI components (ChatBox, MessageBubble, etc.)           |
-| `pages/`      | Application screens (Login, Register, Dashboard, etc.) |
-| `contexts/`   | React Context API for global state                     |
-| `utils/`      | Helper logic and Socket functions                      |
-
-### 🧑‍💻 Available Scripts
-**Backend**
+GET  /api/status/all             # Get all user statuses
+POST /api/status/create          # Create new status
 ```
-npm run dev       # Run in development mode (nodemon)
-npm start         # Start production server
+
+**Complete API docs in COMPLETE_DOCUMENTATION.md**
+
+---
+
+## 🧪 Quick Test
+
+### Test Send OTP
+```bash
+curl -X POST http://localhost:8000/api/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com"}'
 ```
-**Frontend**
+
+### Test Verify OTP (with code from email)
+```bash
+curl -X POST http://localhost:8000/api/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","otp":"123456"}'
 ```
-npm run dev       # Start local development server
-npm run build     # Build production-ready frontend
-```
-### 🧠 Future Enhancements
 
-- 🤖 AI Assistant Integration for Sentiment Analysis
-- 🔔 Push Notifications
-- 🧑‍🤝‍🧑 Group Video Calls
-- 🕵️ End-to-End Message Encryption
-- 🌓 Dark & Light Mode Toggle
+**More tests in COMPLETE_DOCUMENTATION.md Testing Guide**
 
-### 👨‍💻 Author
+---
 
-Nikhil Kumar
-B.Tech CSE (AI) | Full Stack Developer | Chat & Web3 Enthusiast
-- 🔗 LinkedIn: https://www.linkedin.com/in/nikhil-kumar-2974292a9/
-- 💻 GitHub: https://github.com/nikhil7591
+## 🚀 Deployment
 
-### 🪪 License
-- This project is licensed under the MIT License.
-- You are free to use and modify it with proper attribution.
+### Deploy Backend to Render
+1. Push code to GitHub
+2. Create new service on render.com
+3. Set environment variables
+4. Deploy - auto-deploys on git push
 
-**⭐ Show your support**
-- If you like this project, please star the repository on GitHub — it means a lot!
+### Deploy Frontend to Vercel
+1. Import GitHub repo on vercel.com
+2. Set environment variables
+3. Deploy - auto-deploys on git push
+
+**Detailed steps in COMPLETE_DOCUMENTATION.md Deployment section**
+
+---
+
+## 🐛 Troubleshooting
+
+### Email not sending?
+- ✅ Check EMAIL_USER & EMAIL_PASS in .env
+- ✅ Gmail app password generated correctly?
+- ✅ Check spam/junk folder
+- ✅ Wait 10-30 seconds (SMTP can be slow)
+
+### OTP not validating?
+- ✅ Ensure 6-digit code from email
+- ✅ No spaces in OTP
+- ✅ OTP valid for 5 minutes only
+
+### Can't connect to MongoDB?
+- ✅ Check MONGO_URI is correct
+- ✅ Whitelist your IP in MongoDB Atlas
+- ✅ Verify credentials are correct
+
+### CORS errors?
+- ✅ Add `credentials: 'include'` to fetch calls
+- ✅ Check FRONTEND_URL in backend .env
+- ✅ Clear browser cookies/cache
+
+**Full troubleshooting in COMPLETE_DOCUMENTATION.md**
+
+---
+
+## 📝 What's New (Recent Changes)
+
+### ✅ Authentication Migration
+- **Removed:** Twilio SMS OTP
+- **Added:** Nodemailer email-based OTP
+- **Benefits:** Works on Render, no SMS charges, more control
+
+### ✅ Frontend Updates
+- Email-only login form
+- Professional loading screen
+- Conditional routing (new vs existing users)
+- Improved error handling
+
+### ✅ Documentation
+- Complete setup guide
+- API reference
+- Testing procedures
+- Deployment steps
+
+### ✅ Preserved
+- WebRTC video calling ✓
+- Socket.IO real-time chat ✓
+- File sharing ✓
+- Status updates ✓
+
+---
+
+## 📊 Status
+
+- ✅ Backend: Complete & Tested
+- ✅ Frontend: Complete & Tested
+- ✅ Documentation: Complete
+- 🚀 Ready for Production
+
+---
+
+## 🔐 Security
+
+- 🔒 JWT token authentication
+- 🔒 OTP expiry (5 minutes)
+- 🔒 Email-only authentication
+- 🔒 Password hashing
+- 🔒 httpOnly cookies
+- 🔒 No sensitive data in frontend
+
+---
+
+## 📞 Need Help?
+
+### Documentation
+1. **Setup Issues?** → See COMPLETE_DOCUMENTATION.md "Environment Variables"
+2. **API Questions?** → See COMPLETE_DOCUMENTATION.md "API Reference"
+3. **Deployment Help?** → See COMPLETE_DOCUMENTATION.md "Deployment"
+4. **Errors?** → See COMPLETE_DOCUMENTATION.md "Troubleshooting"
+
+### Key Files
+- `COMPLETE_DOCUMENTATION.md` - ⭐ Full guide
+- `README.md` - This file (quick overview)
+- `.env.example` - Environment template
+
+---
+
+## 🎯 Next Steps
+
+1. **Read:** Open `COMPLETE_DOCUMENTATION.md`
+2. **Setup:** Follow backend & frontend setup
+3. **Test:** Run the quick tests
+4. **Deploy:** Follow deployment guide
+5. **Monitor:** Check logs for issues
+
+---
+
+## 📄 Project Files
+
+| File | Purpose |
+|------|---------|
+| `COMPLETE_DOCUMENTATION.md` | ⭐ Full guide - START HERE |
+| `README.md` | Quick overview (this file) |
+| `backend/` | Node.js + Express server |
+| `frontend/` | React application |
+
+---
+
+## 📌 Important Links
+
+- 📖 [Full Documentation](./COMPLETE_DOCUMENTATION.md)
+- 🔐 [Gmail App Password Setup](./COMPLETE_DOCUMENTATION.md#gmail-app-password-setup)
+- 🧪 [Testing Guide](./COMPLETE_DOCUMENTATION.md#testing-guide)
+- 🚀 [Deployment Guide](./COMPLETE_DOCUMENTATION.md#deployment)
+- 🐛 [Troubleshooting](./COMPLETE_DOCUMENTATION.md#troubleshooting)
+
+---
+
+## 📄 License
+
+MIT License - Open source and free to use
+
+---
+
+## 👨‍💻 Version Info
+
+- **Version:** 1.0
+- **Updated:** December 13, 2025
+- **Status:** Production Ready ✅
+- **Tested:** All features working ✅
+
+---
+
+## 🙏 Thank You!
+
+Thank you for using IntelliChat. If you find this helpful, please ⭐ star the repository!
+
+---
+
+## 📮 Feedback
+
+Have suggestions or found a bug? Please open an issue or submit a pull request.
+
+---
+
+**👉 [OPEN COMPLETE_DOCUMENTATION.MD TO GET STARTED](./COMPLETE_DOCUMENTATION.md)**

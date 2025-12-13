@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import useLoginStore from "../../store/useLoginStore";
-import countries from "../../utils/countriles";
 import * as yup from 'yup';
 import { yupResolver } from "@hookform/resolvers/yup";
 import useUserStore from "../../store/useUserStore";
@@ -8,37 +7,18 @@ import { useForm } from "react-hook-form";
 import useThemeStore from "../../store/themeStore";
 import { useNavigate } from "react-router-dom";
 import { motion } from 'framer-motion';
-import { FaWhatsapp, FaChevronDown, FaEye, FaEyeSlash, FaUser, FaArrowLeft, FaPlus } from 'react-icons/fa';
-import Flag from "../../components/Flag";
+import { FaWhatsapp, FaUser, FaArrowLeft, FaPlus } from 'react-icons/fa';
 import { sendOtp, verifyOtp, updateUserProfile } from "../../services/user.service";
 import Spinner from "../../utils/Spinner";
 import { toast } from "react-toastify";
 
-// validation schema 
+// validation schema for email only
 const loginValidationSchema = yup.object().shape({
-    phoneNumber: yup
-        .string()
-        .nullable()
-        .notRequired()
-        .matches(/^\d+$/, "Phone number must be digits")
-        .transform((value, originalValue) =>
-            originalValue?.trim() === "" ? null : value
-        ),
     email: yup
         .string()
-        .nullable()
-        .notRequired()
-        .email("Please enter valid email")
-        .transform((value, originalValue) =>
-            originalValue?.trim() === "" ? null : value
-        )
-}).test(
-    "at-least-one",
-    "Either email or phone number is required",
-    function (value) {
-        return !!(value.phoneNumber || value.email)
-    }
-);
+        .required("Email is required")
+        .email("Please enter a valid email address")
+});
 
 const otpValidationSchema = yup.object().shape({
     otp: yup.string().length(6, "OTP must be exactly 6 digits").required("OTP is required")
@@ -60,10 +40,8 @@ const avatars = [
 
 const Login = () => {
     const { step, setStep, setUserPhoneData, userPhoneData, resetLoginState } = useLoginStore();
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [selectedCountry, setSelectedCountry] = useState(countries[0]);
-    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [email, setEmail] = useState("");
+    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [profilePicture, setProfilePicture] = useState(null);
     const [selectedAvatar, setSelectedAvatar] = useState(avatars[0]);
     const [profilePictureFile, setProfilePictureFile] = useState(null);
@@ -72,8 +50,6 @@ const Login = () => {
     const navigate = useNavigate();
     const { setUser } = useUserStore();
     const { theme } = useThemeStore();
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
 
     const {
         register: loginRegister,
@@ -81,17 +57,6 @@ const Login = () => {
         formState: { errors: loginErrors }
     } = useForm({
         resolver: yupResolver(loginValidationSchema)
-    });
-
-    const {
-        handleSubmit: handleOtpSubmit,
-        formState: { errors: otpErrors },
-        setValue: setOtpValue,
-    } = useForm({
-        resolver: yupResolver(otpValidationSchema),
-        defaultValues: {
-            otp: ""
-        }
     });
 
     const {
@@ -103,36 +68,22 @@ const Login = () => {
         resolver: yupResolver(profileValidationSchema)
     });
 
-    const filterCountries = countries.filter(
-        (country) => country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.dialCode.includes(searchTerm)
-    );
-
     // Clear error when component unmounts or step changes
     useEffect(() => {
         setError("");
     }, [step]);
 
-    // onLoginSubmit handler
-    const onLoginSubmit = async () => {
+    // onLoginSubmit handler - Email only
+    const onLoginSubmit = async (data) => {
         try {
             setLoading(true);
             setError("");
             
-            if (email) {
-                const response = await sendOtp(null, null, email);
-                if (response.status === "success") {
-                    toast.info("OTP sent to your email");
-                    setUserPhoneData({ email });
-                    setStep(2);
-                }
-            } else {
-                const response = await sendOtp(phoneNumber, selectedCountry.dialCode, null);
-                if (response.status === "success") {
-                    toast.info("OTP sent to your phone number");
-                    setUserPhoneData({ phoneNumber, phoneSuffix: selectedCountry.dialCode });
-                    setStep(2);
-                }
+            const response = await sendOtp(data.email);
+            if (response.status === "success") {
+                toast.info("OTP sent to your email");
+                setUserPhoneData({ email: data.email });
+                setStep(2);
             }
         } catch (error) {
             console.error("Error sending OTP:", error);
@@ -149,8 +100,8 @@ const Login = () => {
             setLoading(true);
             setError("");
             
-            if (!userPhoneData) {
-                throw new Error("Phone or email data is missing");
+            if (!userPhoneData?.email) {
+                throw new Error("Email data is missing");
             }
             
             const otpString = otp.join("");
@@ -159,32 +110,22 @@ const Login = () => {
                 throw new Error("Please enter complete 6-digit OTP");
             }
 
-            console.log('Submitting OTP:', {
-                phoneNumber: userPhoneData.phoneNumber,
-                phoneSuffix: userPhoneData.phoneSuffix,
-                otp: otpString,
-                email: userPhoneData.email
-            });
-
-            let response;
-            if (userPhoneData?.email) {
-                response = await verifyOtp(null, null, otpString, userPhoneData.email);
-            } else {
-                response = await verifyOtp(userPhoneData.phoneNumber, userPhoneData.phoneSuffix, otpString, null);
-            }
+            const response = await verifyOtp(userPhoneData.email, otpString);
             
             if (response.status === "success") {
                 toast.success("OTP verified successfully");
                 const token = response.data?.token;
-                localStorage.setItem("auth_token",token);
-                const user = response.data;
+                localStorage.setItem("auth_token", token);
+                const user = response.data?.user;
                 
                 if (user?.username && user?.profilePicture) {
+                    // User exists - redirect to home
                     setUser(user);
-                    toast.success("Welcome back to WhatsApp");
+                    toast.success("Welcome back to IntelliChat");
                     navigate("/");
                     resetLoginState();
                 } else {
+                    // New user - redirect to profile setup
                     setStep(3);
                 }
             }
@@ -238,7 +179,7 @@ const Login = () => {
             }
             
             await updateUserProfile(formData);
-            toast.success("Profile created successfully! Welcome to WhatsApp");
+            toast.success("Profile created successfully! Welcome to IntelliChat");
             navigate("/");
             resetLoginState();
         } catch (error) {
@@ -260,7 +201,6 @@ const Login = () => {
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
-        setOtpValue("otp", newOtp.join(""));
 
         // Auto-focus next input
         if (value && index < 5) {
@@ -299,13 +239,6 @@ const Login = () => {
         setError("");
     };
 
-    // Handle country select
-    const handleCountrySelect = (country) => {
-        setSelectedCountry(country);
-        setShowDropdown(false);
-        setSearchTerm("");
-    };
-
     return (
         <div className={`min-h-screen ${theme === 'dark' ? "bg-gray-900" : "bg-gradient-to-br from-green-400 to-blue-500"} flex items-center justify-center p-4 overflow-hidden`}>
             <motion.div
@@ -324,7 +257,7 @@ const Login = () => {
                 </motion.div>
                 
                 <h1 className={`text-3xl font-bold text-center mb-6 ${theme === "dark" ? "text-white" : "text-gray-800"}`}>
-                    WhatsApp Login
+                    IntelliChat Login
                 </h1>
 
                 <ProgressBar />
@@ -335,85 +268,20 @@ const Login = () => {
                     </div>
                 )}
 
-                {/* Step 1: Phone/Email Input */}
+                {/* Step 1: Email Input Only */}
                 {step === 1 && (
                     <form className="space-y-4" onSubmit={handleLoginSubmit(onLoginSubmit)}>
                         <p className={`text-center ${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-4`}>
-                            Enter your phone number to receive an OTP
+                            Enter your email to receive an OTP
                         </p>
 
-                        <div className="relative">
-                            <div className="flex gap-2">
-                                <div className="relative w-1/3">
-                                    <button
-                                        type="button"
-                                        className={`w-full flex items-center justify-between py-2.5 px-3 text-sm font-medium ${theme === 'dark' ? "bg-gray-700 text-white border-gray-600 hover:bg-gray-600" : "bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200"} border rounded-lg focus:ring-4 focus:outline-none focus:ring-gray-100 transition`}
-                                        onClick={() => setShowDropdown(!showDropdown)}
-                                    >
-                                        <div className="flex items-center">
-                                            <Flag countryCode={selectedCountry.alpha2} size="1.2em" className="mr-1" />
-                                            <span className="text-xs">{selectedCountry.dialCode}</span>
-                                        </div>
-                                        <FaChevronDown className="ml-1 text-xs" />
-                                    </button>
-                                    
-                                    {showDropdown && (
-                                        <div className={`absolute z-20 w-64 mt-1 ${theme === 'dark' ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} border rounded-md shadow-lg max-h-60 overflow-auto`}>
-                                            <div className={`sticky top-0 ${theme === 'dark' ? "bg-gray-700" : "bg-white"} p-2 border-b ${theme === 'dark' ? "border-gray-600" : "border-gray-200"}`}>
-                                                <input 
-                                                    type="text"
-                                                    placeholder="Search countries..."
-                                                    value={searchTerm}
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                    className={`w-full px-2 py-1 border ${theme === 'dark' ? "bg-gray-600 border-gray-500 text-white placeholder-gray-400" : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"} rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500`}
-                                                />
-                                            </div>
-                                            {filterCountries.map((country, index) => (
-                                                <button
-                                                    key={index}
-                                                    type="button"
-                                                    onClick={() => handleCountrySelect(country)}
-                                                    className={`w-full text-left px-3 py-2 flex items-center ${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-100'} focus:outline-none transition`}
-                                                >
-                                                    <Flag countryCode={country.alpha2} size="1.2em" className="mr-2" />
-                                                    <span className="text-sm">{country.name} ({country.dialCode})</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <input 
-                                    type="text"
-                                    placeholder="Enter phone number"
-                                    {...loginRegister("phoneNumber")}
-                                    value={phoneNumber}
-                                    onChange={(e) => setPhoneNumber(e.target.value)}
-                                    className={`flex-1 px-4 py-2 border ${theme === 'dark' ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${loginErrors.phoneNumber ? "border-red-500" : ""}`}
-                                />
-                            </div>
-                            {loginErrors.phoneNumber && (
-                                <p className="text-red-500 text-sm mt-1">{loginErrors.phoneNumber.message}</p>
-                            )}
-                        </div>
-
-                        {/* Divider with OR */}
-                        <div className="flex items-center my-4">
-                            <div className={`flex-grow h-px ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
-                            <span className={`mx-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-sm font-medium`}>OR</span>
-                            <div className={`flex-grow h-px ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
-                        </div>
-                        
-                        {/* Email input */}
                         <div>
                             <div className={`flex items-center border rounded-lg px-3 py-2 ${theme === 'dark' ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} ${loginErrors.email ? "border-red-500" : ""}`}>
                                 <FaUser className={`mr-2 ${theme === 'dark' ? "text-gray-400" : "text-gray-500"}`} />
                                 <input 
                                     type="email"
-                                    placeholder="Email (optional)"
+                                    placeholder="Enter your email"
                                     {...loginRegister("email")}
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
                                     className={`w-full bg-transparent focus:outline-none ${theme === 'dark' ? "text-white placeholder-gray-400" : "text-black placeholder-gray-500"}`}
                                 />
                             </div>
@@ -434,9 +302,9 @@ const Login = () => {
 
                 {/* Step 2: Verify OTP */}
                 {step === 2 && (
-                    <form onSubmit={handleOtpSubmit(onOtpSubmit)} className="space-y-4">
+                    <form onSubmit={(e) => { e.preventDefault(); onOtpSubmit(); }} className="space-y-4">
                         <p className={`text-center ${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-4`}>
-                            Please enter the 6-digit OTP sent to {userPhoneData?.email ? "your email" : `${userPhoneData?.phoneSuffix} ${userPhoneData?.phoneNumber}`}
+                            Please enter the 6-digit OTP sent to {userPhoneData?.email}
                         </p>
                         
                         <div className="flex justify-between gap-2">
@@ -450,14 +318,10 @@ const Login = () => {
                                     value={digit}
                                     onChange={(e) => handleOtpChange(index, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    className={`w-12 h-12 text-center text-lg font-bold border ${theme === 'dark' ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${otpErrors.otp ? "border-red-500" : ""}`}
+                                    className={`w-12 h-12 text-center text-lg font-bold border ${theme === 'dark' ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                                 />
                             ))}
                         </div>
-                        
-                        {otpErrors.otp && (
-                            <p className="text-red-500 text-sm text-center">{otpErrors.otp.message}</p>
-                        )}
                         
                         <button
                             type="submit"
@@ -473,7 +337,7 @@ const Login = () => {
                             className={`w-full ${theme === 'dark' ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-900 hover:bg-gray-300"} py-3 rounded-lg transition flex items-center justify-center font-semibold`}
                         >
                             <FaArrowLeft className="mr-2" />
-                            Wrong number? Go back
+                            Wrong email? Go back
                         </button>
                     </form>
                 )}
@@ -545,7 +409,7 @@ const Login = () => {
                                     className="mt-1 rounded text-green-500 focus:ring-2 focus:ring-green-500"
                                 />
                                 <label htmlFor="terms" className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                                    I agree to the <a href="#" className="text-green-500 hover:underline font-medium">Terms & Conditions</a> and <a href="#" className="text-green-500 hover:underline font-medium">Privacy Policy</a>
+                                    I agree to the <button type="button" className="text-green-500 hover:underline font-medium">Terms & Conditions</button> and <button type="button" className="text-green-500 hover:underline font-medium">Privacy Policy</button>
                                 </label>
                             </div>
                             {profileErrors.agreed && (

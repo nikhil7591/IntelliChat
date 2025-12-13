@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/user-login/Login";
@@ -13,10 +13,13 @@ import useUserStore from "./store/useUserStore";
 import { disconnectSocket, initializeSocket } from "./services/chat.service";
 import { useChatStore } from "./store/chatStore";
 import Layout from "./components/Layout";
+import LoadingScreen from "./components/LoadingScreen";
 
 function App() {
   const {user} = useUserStore();
   const {setCurrentUser, initSocketListeners,cleanup} = useChatStore();
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(()=>{
     if(user?._id){
       const socket = initializeSocket();
@@ -31,7 +34,10 @@ function App() {
     }
   },[user,setCurrentUser,initSocketListeners,cleanup])
 
-  
+  if (isLoading) {
+    return <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />;
+  }
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />

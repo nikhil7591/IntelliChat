@@ -1,10 +1,9 @@
 import axiosInstance from "./url.service";
 
-export const sendOtp = async (phoneNumber, phoneSuffix, email) => {
+// Send OTP to email (email only)
+export const sendOtp = async (email) => {
   try {
     const response = await axiosInstance.post("/auth/send-otp", {
-      phoneNumber,
-      phoneSuffix,
       email,
     });
     return response.data;
@@ -13,13 +12,12 @@ export const sendOtp = async (phoneNumber, phoneSuffix, email) => {
   }
 };
 
-export const verifyOtp = async (phoneNumber, phoneSuffix, otp, email) => {
+// Verify OTP from email (email only)
+export const verifyOtp = async (email, otp) => {
   try {
     const response = await axiosInstance.post("/auth/verify-otp", {
-      phoneNumber,
-      phoneSuffix,
-      otp,
       email,
+      otp,
     });
     return response.data;
   } catch (error) {
