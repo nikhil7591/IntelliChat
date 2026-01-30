@@ -6,8 +6,10 @@ const useUserStore = create(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      isInitialized: false, // Track if initial auth check has been performed
       setUser: (userData) => set({ user: userData, isAuthenticated: true }),
       clearUser: () => set({ user: null, isAuthenticated: false }),
+      setInitialized: (value) => set({ isInitialized: value }),
     }),
     {
       name: "user-storage",

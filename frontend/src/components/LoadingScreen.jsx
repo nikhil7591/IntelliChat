@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import useUserStore from "../store/useUserStore";
-import { FaWhatsapp, FaUser, FaArrowLeft, FaPlus } from 'react-icons/fa';
+import { FaWhatsapp } from 'react-icons/fa';
 
-const LoadingScreen = ({ onLoadingComplete }) => {
+const LoadingScreen = () => {
   const [progress, setProgress] = useState(0);
-  const { user } = useUserStore();
 
   useEffect(() => {
     // Simulate loading progress
@@ -19,19 +17,10 @@ const LoadingScreen = ({ onLoadingComplete }) => {
       });
     }, 300);
 
-    // Check authentication and complete loading
-    const checkAuth = setTimeout(() => {
-      setProgress(100);
-      setTimeout(() => {
-        onLoadingComplete();
-      }, 500);
-    }, 2000);
-
     return () => {
       clearInterval(interval);
-      clearTimeout(checkAuth);
     };
-  }, [onLoadingComplete]);
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
@@ -119,7 +108,7 @@ const LoadingScreen = ({ onLoadingComplete }) => {
           transition={{ delay: 0.9 }}
           className="text-white/70 text-xs mt-8"
         >
-          {user ? "Preparing your chat..." : "Initializing app..."}
+          Initializing app...
         </motion.p>
       </div>
     </div>

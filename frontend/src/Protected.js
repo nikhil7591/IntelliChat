@@ -1,53 +1,37 @@
-import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom"
 import useUserStore from "./store/useUserStore";
-import { checkUserAuth } from "./services/user.service";
-import Loader from "./utils/Loader"
 
-
-export const ProtectedRoute = ()=>{
+export const ProtectedRoute = () => {
     const location = useLocation();
-    const [isChecking, setIsChecking] = useState(true);
-    const {isAuthenticated, setUser, clearUser} = useUserStore();
+    const { isAuthenticated, isInitialized } = useUserStore();
 
-    useEffect(()=>{
-        const verifyAuth = async()=>{
-            try {
-                const result = await checkUserAuth();
-                if(result?.isAuthenticated){
-                    setUser(result.user);
-                } else {
-                    clearUser();
-                }
-            } catch (error) {
-                console.error("Auth check error:", error);
-                // Clear user if auth check fails (e.g., token expired or invalid)
-                clearUser();
-            } finally {
-                setIsChecking(false);
-            }
-        }
-        verifyAuth();
-    },[setUser, clearUser])
-
-    if(isChecking){
-        return <Loader/>;
+    // Wait for initial auth check to complete
+    if (!isInitialized) {
+        return null; // LoadingScreen is shown in App.js
     }
 
-    if(!isAuthenticated){
-        return <Navigate to="/user-login" state={{from:location}} replace />
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+        return <Navigate to="/user-login" state={{ from: location }} replace />
     }
 
-    // user is authenticated - render the protected component
-    return <Outlet/>
+    // User is authenticated - render the protected component
+    return <Outlet />
 }
 
-export const PublicRoute = ()=>{
-    const isAuthenticated = useUserStore(state => state.isAuthenticated);
-    
+export const PublicRoute = () => {
+    const { isAuthenticated, isInitialized } = useUserStore();
+
+    // Wait for initial auth check to complete
+    if (!isInitialized) {
+        return null; // LoadingScreen is shown in App.js
+    }
+
+    // If already authenticated, redirect to home
     if (isAuthenticated) {
         return <Navigate to="/" replace />;
     }
-    
-    return <Outlet />;
+
+    // User is not authenticated - show login page
+    return <Outlet />
 }

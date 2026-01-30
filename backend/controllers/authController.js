@@ -48,6 +48,13 @@ const sentOtp = async (req, res) => {
 };
 
 // Step 2: Verify OTP sent to email
+
+// Demo account credentials
+const DEMO_EMAIL = process.env.DEMO_EMAIL;
+const DEMO_OTP = process.env.DEMO_OTP;
+
+// Demo login enabled in development for testing
+const isDemoEnabled = DEMO_EMAIL && DEMO_OTP;
 const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   
@@ -64,6 +71,33 @@ const verifyOtp = async (req, res) => {
     }
 
     // Validate OTP
+    // Check for demo login
+    if (isDemoEnabled && email === DEMO_EMAIL && String(otp) === String(DEMO_OTP)) {
+      // Directly authenticate the demo user
+      user.isVerified = true;
+      user.emailOtp = null;
+      user.emailOtpExpiry = null;
+      await user.save();
+
+      // Generate JWT token
+      const token = generateToken(user._id);
+
+      // Set authentication token in cookie
+      res.cookie("auth_token", token, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
+      });
+
+      return response(res, 200, "Demo login successful", { 
+        user: {
+          _id: user._id,
+          email: user.email,
+          username: user.username,
+          profilePicture: user.profilePicture,
+        },
+        token 
+      });
+    }
     const now = new Date();
     
     // Check if OTP exists
