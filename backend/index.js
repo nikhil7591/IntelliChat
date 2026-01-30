@@ -16,19 +16,37 @@ dotenv.config();
 const PORT = process.env.PORT || 8000;
 const app = express();
 
-// CORS configuration - allow frontend origin
+// CORS configuration - allow frontend origin(s)
+// Support multiple origins for different environments
 const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.FRONTEND_URL,  // Set in Render env vars
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,  // Auto-detected Vercel URL
+    'http://localhost:3000',
     'https://localhost:3000',
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
 ].filter(Boolean);
 
+console.log("📱 Allowed CORS Origins:", allowedOrigins);
+
 const corsOptions = {
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            console.warn("CORS blocked origin:", origin);
+            return callback(new Error('CORS policy: Origin not allowed'));
+        }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
 }
+
 app.use(cors(corsOptions));
 
 // Middleware 
