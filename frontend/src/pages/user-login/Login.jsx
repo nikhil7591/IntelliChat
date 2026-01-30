@@ -110,24 +110,39 @@ const Login = () => {
                 throw new Error("Please enter complete 6-digit OTP");
             }
 
+            console.log("Verifying OTP for email:", userPhoneData.email);
             const response = await verifyOtp(userPhoneData.email, otpString);
+            console.log("OTP verification response:", response);
             
             if (response.status === "success") {
                 toast.success("OTP verified successfully");
                 const token = response.data?.token;
-                localStorage.setItem("auth_token", token);
-                const user = response.data?.user;
                 
-                if (user?.username && user?.profilePicture) {
-                    // User exists - redirect to home
-                    setUser(user);
-                    toast.success("Welcome back to IntelliChat");
-                    navigate("/");
-                    resetLoginState();
-                } else {
-                    // New user - redirect to profile setup
-                    setStep(3);
+                // Store token in localStorage
+                if (token) {
+                    localStorage.setItem("auth_token", token);
+                    console.log("Token stored in localStorage");
                 }
+                
+                const user = response.data?.user;
+                console.log("User data after OTP verification:", user);
+                
+                if (user) {
+                    // Update auth state
+                    setUser(user);
+                    console.log("User set in store, navigating to home");
+                    
+                    toast.success("Welcome to IntelliChat!");
+                    
+                    // Reset and navigate
+                    resetLoginState();
+                    navigate("/", { replace: true });
+                } else {
+                    console.error("No user data in response");
+                    throw new Error("User data missing in response");
+                }
+            } else {
+                throw new Error(response.message || "OTP verification failed");
             }
         } catch (error) {
             console.error("Error verifying OTP:", error);

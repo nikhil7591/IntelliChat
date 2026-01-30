@@ -7,7 +7,7 @@ const getToken = () => localStorage.getItem("auth_token")
 
 const axiosInstance = axios.create({
     baseURL: apiUrl,
-    // withCredentials : true,
+    withCredentials: true, // Enable cookies for cross-origin requests
 })
 
 axiosInstance.interceptors.request.use((config)=>{

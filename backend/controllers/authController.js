@@ -53,8 +53,8 @@ const sentOtp = async (req, res) => {
 const DEMO_EMAIL = process.env.DEMO_EMAIL;
 const DEMO_OTP = process.env.DEMO_OTP;
 
-// Demo login enabled in development for testing
-const isDemoEnabled = DEMO_EMAIL && DEMO_OTP;
+// Demo login enabled only in production
+const isDemoEnabled = process.env.NODE_ENV === 'production' && DEMO_EMAIL && DEMO_OTP;
 const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   
@@ -71,23 +71,38 @@ const verifyOtp = async (req, res) => {
     }
 
     // Validate OTP
-    // Check for demo login
+    // Check for demo login first
     if (isDemoEnabled && email === DEMO_EMAIL && String(otp) === String(DEMO_OTP)) {
-      // Directly authenticate the demo user
+      console.log("Demo login attempt:", email);
+      
+      // Set default demo profile if not already set
+      if (!user.username) {
+        user.username = "Demo User";
+      }
+      if (!user.profilePicture) {
+        user.profilePicture = "https://api.dicebear.com/6.x/avataaars/svg?seed=Demo";
+      }
+      
+      // Demo user - authenticate directly
       user.isVerified = true;
       user.emailOtp = null;
       user.emailOtpExpiry = null;
+      user.agreed = true;
       await user.save();
 
       // Generate JWT token
       const token = generateToken(user._id);
 
-      // Set authentication token in cookie
+      // Set authentication token in cookie with production-safe options
       res.cookie("auth_token", token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
         maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
+        path: '/',
       });
 
+      console.log("Demo login successful for:", email, "with user ID:", user._id);
       return response(res, 200, "Demo login successful", { 
         user: {
           _id: user._id,
@@ -127,10 +142,13 @@ const verifyOtp = async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id);
     
-    // Set authentication token in cookie
+    // Set authentication token in cookie with production-safe options
     res.cookie("auth_token", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
       maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
+      path: '/',
     });
 
     return response(res, 200, "OTP verified successfully", { 

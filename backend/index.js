@@ -16,11 +16,18 @@ dotenv.config();
 const PORT = process.env.PORT || 8000;
 const app = express();
 
+// CORS configuration - allow frontend origin
+const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'https://localhost:3000',
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+].filter(Boolean);
 
 const corsOptions = {
-    // Support both correctly spelled FRONTEND_URL and the misspelled FORNTEND_URL
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }
 app.use(cors(corsOptions));
 
