@@ -11,9 +11,17 @@ const onlineUsers = new Map();
 const typingUsers = new Map();
 
 const initializeSocket = (server) => {
+  // Build allowed origins for Socket.IO CORS
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    'http://localhost:3000',
+    'https://localhost:3000',
+  ].filter(Boolean);
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.FORNTEND_URL,
+      origin: allowedOrigins,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     },
