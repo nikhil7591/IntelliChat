@@ -6,6 +6,10 @@ const sendOTPToEmail = require("../services/emailService");
 const generateToken = require("../utils/generateToken");
 const { uploadFileToCloundinary } = require("../config/CloudinaryConfig");
 
+// Demo account credentials
+const DEMO_EMAIL = process.env.DEMO_EMAIL;
+const DEMO_OTP = process.env.DEMO_OTP;
+
 // Step 1: Send OTP to email (Email-only authentication)
 const sentOtp = async (req, res) => {
   const { email } = req.body;
@@ -22,15 +26,28 @@ const sentOtp = async (req, res) => {
       return response(res, 400, "Please provide a valid email address");
     }
 
-    // Generate 6-digit OTP
-    const otp = otpGenerate();
-    const expiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
+    // Check if this is the demo account
+    const isDemo = email === DEMO_EMAIL && DEMO_EMAIL && DEMO_OTP;
 
     // Find or create user
     let user = await User.findOne({ email });
     if (!user) {
       user = new User({ email });
     }
+
+    if (isDemo) {
+      // Demo account - skip actual email sending
+      console.log("Demo account detected - skipping email send");
+      user.emailOtp = DEMO_OTP;
+      user.emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // Valid for 10 minutes
+      await user.save();
+      
+      return response(res, 200, "OTP sent to your email address (Demo mode)", { email });
+    }
+
+    // Normal flow - Generate and send real OTP
+    const otp = otpGenerate();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
     // Store OTP and expiry in database
     user.emailOtp = otp;
@@ -48,13 +65,6 @@ const sentOtp = async (req, res) => {
 };
 
 // Step 2: Verify OTP sent to email
-
-// Demo account credentials
-const DEMO_EMAIL = process.env.DEMO_EMAIL;
-const DEMO_OTP = process.env.DEMO_OTP;
-
-// Demo login enabled only in production
-const isDemoEnabled = process.env.NODE_ENV === 'production' && DEMO_EMAIL && DEMO_OTP;
 const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   
@@ -72,7 +82,7 @@ const verifyOtp = async (req, res) => {
 
     // Validate OTP
     // Check for demo login first
-    if (isDemoEnabled && email === DEMO_EMAIL && String(otp) === String(DEMO_OTP)) {
+    if (email === DEMO_EMAIL && String(otp) === String(DEMO_OTP)) {
       console.log("Demo login attempt:", email);
       
       // Set default demo profile if not already set
