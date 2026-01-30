@@ -8,7 +8,24 @@ const { uploadFileToCloundinary } = require("../config/CloudinaryConfig");
 
 // Demo account credentials
 const DEMO_EMAIL = process.env.DEMO_EMAIL;
+const DEMO_EMAIL_2 = process.env.DEMO_EMAIL_2;
 const DEMO_OTP = process.env.DEMO_OTP;
+
+// Demo account info
+const DEMO_ACCOUNTS = {
+  [DEMO_EMAIL]: { name: "Demo User", picture: "https://api.dicebear.com/6.x/avataaars/svg?seed=Demo" },
+  [DEMO_EMAIL_2]: { name: "Demo User2", picture: "https://api.dicebear.com/6.x/avataaars/svg?seed=Demo2" }
+};
+
+// Check if email is a demo account
+const isDemoAccount = (email) => {
+  return email === DEMO_EMAIL || email === DEMO_EMAIL_2;
+};
+
+// Get demo account info
+const getDemoAccountInfo = (email) => {
+  return DEMO_ACCOUNTS[email] || null;
+};
 
 // Step 1: Send OTP to email (Email-only authentication)
 const sentOtp = async (req, res) => {
@@ -26,8 +43,8 @@ const sentOtp = async (req, res) => {
       return response(res, 400, "Please provide a valid email address");
     }
 
-    // Check if this is the demo account
-    const isDemo = email === DEMO_EMAIL && DEMO_EMAIL && DEMO_OTP;
+    // Check if this is a demo account
+    const isDemo = isDemoAccount(email) && DEMO_OTP;
 
     // Find or create user
     let user = await User.findOne({ email });
@@ -37,7 +54,7 @@ const sentOtp = async (req, res) => {
 
     if (isDemo) {
       // Demo account - skip actual email sending
-      console.log("Demo account detected - skipping email send");
+      console.log("Demo account detected - skipping email send:", email);
       user.emailOtp = DEMO_OTP;
       user.emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // Valid for 10 minutes
       await user.save();
@@ -82,15 +99,18 @@ const verifyOtp = async (req, res) => {
 
     // Validate OTP
     // Check for demo login first
-    if (email === DEMO_EMAIL && String(otp) === String(DEMO_OTP)) {
+    if (isDemoAccount(email) && String(otp) === String(DEMO_OTP)) {
       console.log("Demo login attempt:", email);
+      
+      // Get demo account info
+      const demoInfo = getDemoAccountInfo(email);
       
       // Set default demo profile if not already set
       if (!user.username) {
-        user.username = "Demo User";
+        user.username = demoInfo.name;
       }
       if (!user.profilePicture) {
-        user.profilePicture = "https://api.dicebear.com/6.x/avataaars/svg?seed=Demo";
+        user.profilePicture = demoInfo.picture;
       }
       
       // Demo user - authenticate directly
